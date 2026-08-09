@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import { saveTestResult } from '../data/testResults.js'
+import SpeakButton from '../components/SpeakButton.jsx'
 
 const VOCAB_TARGET = 20
 const GRAMMAR_TARGET = 10
@@ -211,7 +212,14 @@ export default function Test() {
       </p>
 
       <div className="review-card">
-        <p className="korean">{question.prompt}</p>
+        {question.collection === 'vocabulary' ? (
+          <div className="korean-row">
+            <p className="korean">{question.prompt}</p>
+            <SpeakButton text={question.prompt} />
+          </div>
+        ) : (
+          <p className="korean">{question.prompt}</p>
+        )}
         {question.secondary && <p className="romanization">{question.secondary}</p>}
       </div>
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getLesson } from '../data/lessons.js'
 import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
+import SpeakButton from '../components/SpeakButton.jsx'
 
 export default function LessonDetail() {
   const { id } = useParams()
@@ -55,11 +56,14 @@ export default function LessonDetail() {
       )}
 
       {vocab.length + grammar.length > 0 && (
-        <p>
+        <div className="direction-toggle">
           <Link className="btn btn-primary" to={`/review/lesson/${lesson.id}`}>
             Diese Lektion lernen
           </Link>
-        </p>
+          <Link className="btn btn-ghost" to={`/review/lesson/${lesson.id}?direction=production`}>
+            Produktion üben
+          </Link>
+        </div>
       )}
 
       <h2>Vokabeln ({vocab.length})</h2>
@@ -72,7 +76,10 @@ export default function LessonDetail() {
               <Link className="edit-link" to={`/vocab/${card.id}/edit`}>
                 Bearbeiten
               </Link>
-              {card.korean}
+              <span className="word-row">
+                {card.korean}
+                <SpeakButton text={card.korean} />
+              </span>
               {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
             </li>
           ))}
@@ -86,7 +93,11 @@ export default function LessonDetail() {
         <ul className="list">
           {grammar.map((card) => (
             <li className="list-item" key={card.id}>
-              {card.pattern || card.title} – {card.explanation_de}
+              <span className="word-row">
+                {card.pattern || card.title}
+                <SpeakButton text={card.pattern || card.title} />
+              </span>{' '}
+              – {card.explanation_de}
             </li>
           ))}
         </ul>

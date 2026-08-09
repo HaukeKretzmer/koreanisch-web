@@ -6,7 +6,15 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import { getDueCards } from '../data/dueCards.js'
-import { ReviewIcon, LessonsIcon, ImportIcon, PlusIcon, StatsIcon, TestIcon } from '../components/icons.jsx'
+import {
+  ReviewIcon,
+  LessonsIcon,
+  ImportIcon,
+  PlusIcon,
+  StatsIcon,
+  TestIcon,
+  SwapIcon,
+} from '../components/icons.jsx'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -54,6 +62,12 @@ export default function Dashboard() {
             <ReviewIcon />
           </span>
           Review starten
+        </Link>
+        <Link className="nav-item" to="/review?direction=production">
+          <span className="nav-icon">
+            <SwapIcon />
+          </span>
+          Produktion üben (Deutsch → Koreanisch)
         </Link>
         <Link className="nav-item" to="/test">
           <span className="nav-icon">

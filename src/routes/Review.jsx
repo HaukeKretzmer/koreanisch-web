@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getDueCards } from '../data/dueCards.js'
 import { getLessonCards } from '../data/lessonCards.js'
 import { getLesson } from '../data/lessons.js'
 import { updateSrsFields } from '../data/cards.js'
 import { sm2Update } from '../srs/sm2.js'
+import SpeakButton from '../components/SpeakButton.jsx'
 
 const RATING_BUTTONS = [
   { label: 'Nochmal', quality: 0, className: 'rating-again' },
@@ -13,45 +14,89 @@ const RATING_BUTTONS = [
   { label: 'Leicht', quality: 5, className: 'rating-easy' },
 ]
 
-function CardFront({ card, onReveal }) {
-  const front = card.collection === 'grammar' ? card.pattern || card.title : card.korean
+function koreanOf(card) {
+  return card.collection === 'grammar' ? card.pattern || card.title : card.korean
+}
+
+function germanOf(card) {
+  return card.collection === 'grammar' ? card.explanation_de : card.translation_de
+}
+
+function CardFront({ card, isProduction, onReveal }) {
+  const front = isProduction ? germanOf(card) : koreanOf(card)
 
   return (
-    <button type="button" className="review-card" onClick={onReveal}>
-      <p className="korean">{front}</p>
-      {card.collection === 'vocabulary' && card.romanization && (
+    <div
+      className="review-card"
+      role="button"
+      tabIndex={0}
+      onClick={onReveal}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onReveal()
+        }
+      }}
+    >
+      {isProduction ? (
+        <p className="korean">{front}</p>
+      ) : (
+        <div className="korean-row">
+          <p className="korean">{front}</p>
+          <SpeakButton text={front} />
+        </div>
+      )}
+      {!isProduction && card.collection === 'vocabulary' && card.romanization && (
         <p className="romanization">{card.romanization}</p>
       )}
       <p className="hint">(antippen zum Aufdecken)</p>
-    </button>
+    </div>
   )
 }
 
-function CardBack({ card }) {
-  if (card.collection === 'grammar') {
-    return (
-      <div className="review-back">
-        <p className="translation">{card.explanation_de}</p>
-        {(card.examples ?? []).map((example, index) => (
-          <p className="example" key={index}>
-            {example.korean} – {example.translation_de}
-          </p>
-        ))}
-      </div>
-    )
-  }
+function CardBack({ card, isProduction }) {
+  const isGrammar = card.collection === 'grammar'
+  const koreanText = koreanOf(card)
+  const germanText = germanOf(card)
+  const examples = isGrammar ? card.examples ?? [] : []
 
   return (
     <div className="review-back">
-      <p className="translation">{card.translation_de}</p>
-      {card.example_sentence_kr && <p className="example">{card.example_sentence_kr}</p>}
-      {card.example_sentence_de && <p className="example">{card.example_sentence_de}</p>}
+      {isProduction ? (
+        <div className="korean-row">
+          <p className="translation">{koreanText}</p>
+          <SpeakButton text={koreanText} />
+        </div>
+      ) : (
+        <p className="translation">{germanText}</p>
+      )}
+      {!isProduction && !isGrammar && card.romanization && (
+        <p className="romanization">{card.romanization}</p>
+      )}
+
+      {isGrammar
+        ? examples.map((example, index) => (
+            <p className="example" key={index}>
+              {example.korean} – {example.translation_de}
+              <SpeakButton text={example.korean} />
+            </p>
+          ))
+        : (card.example_sentence_kr || card.example_sentence_de) && (
+            <p className="example">
+              {card.example_sentence_kr}
+              {card.example_sentence_kr && <SpeakButton text={card.example_sentence_kr} />}
+              {card.example_sentence_kr && card.example_sentence_de && ' – '}
+              {card.example_sentence_de}
+            </p>
+          )}
     </div>
   )
 }
 
 export default function Review() {
   const { lessonId } = useParams()
+  const [searchParams] = useSearchParams()
+  const isProduction = searchParams.get('direction') === 'production'
   const backLink = lessonId ? `/lessons/${lessonId}` : '/'
   const backLabel = lessonId ? 'Zurück zur Lektion' : 'Zurück zum Dashboard'
 
@@ -126,18 +171,22 @@ export default function Review() {
   }
 
   const currentCard = cards[currentIndex]
+  const heading = lessonId ? `Review: ${lessonTitle ?? ''}` : 'Review'
 
   return (
     <div className="page">
-      <h1>{lessonId ? `Review: ${lessonTitle ?? ''}` : 'Review'}</h1>
+      <h1>
+        {heading}
+        {isProduction ? ' (Produktion)' : ''}
+      </h1>
       <p className="review-progress">
         Karte {currentIndex + 1} von {cards.length}
       </p>
       {!revealed ? (
-        <CardFront card={currentCard} onReveal={() => setRevealed(true)} />
+        <CardFront card={currentCard} isProduction={isProduction} onReveal={() => setRevealed(true)} />
       ) : (
         <>
-          <CardBack card={currentCard} />
+          <CardBack card={currentCard} isProduction={isProduction} />
           <div className="rating-buttons">
             {RATING_BUTTONS.map(({ label, quality, className }) => (
               <button
