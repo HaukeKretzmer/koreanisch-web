@@ -3,6 +3,7 @@ import { AuthProvider } from './auth/AuthContext.jsx'
 import { ProtectedRoute } from './auth/ProtectedRoute.jsx'
 import Login from './routes/Login.jsx'
 import Dashboard from './routes/Dashboard.jsx'
+import Review from './routes/Review.jsx'
 
 function App() {
   return (
@@ -15,6 +16,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <ProtectedRoute>
+                <Review />
               </ProtectedRoute>
             }
           />

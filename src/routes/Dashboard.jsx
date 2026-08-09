@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../firebase.js'
 import { useAuth } from '../auth/AuthContext.jsx'
@@ -54,6 +55,9 @@ export default function Dashboard() {
       <button type="button" onClick={() => signOut(auth)}>
         Abmelden
       </button>
+      <p>
+        <Link to="/review">Review starten</Link>
+      </p>
       <DataAccessDebug />
     </div>
   )
