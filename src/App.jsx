@@ -6,6 +6,7 @@ import Dashboard from './routes/Dashboard.jsx'
 import Review from './routes/Review.jsx'
 import Lessons from './routes/Lessons.jsx'
 import LessonDetail from './routes/LessonDetail.jsx'
+import Import from './routes/Import.jsx'
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LessonDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/import"
+            element={
+              <ProtectedRoute>
+                <Import />
               </ProtectedRoute>
             }
           />

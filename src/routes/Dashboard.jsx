@@ -61,6 +61,9 @@ export default function Dashboard() {
       <p>
         <Link to="/lessons">Lektionen</Link>
       </p>
+      <p>
+        <Link to="/import">Import</Link>
+      </p>
       <DataAccessDebug />
     </div>
   )
