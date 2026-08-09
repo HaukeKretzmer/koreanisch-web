@@ -71,38 +71,54 @@ export default function Stats() {
   }, [])
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p className="error-text" role="alert">{error}</p>
   }
 
   if (!stats) {
-    return <p>Lade Statistik…</p>
+    return <p className="loading-text">Lade Statistik…</p>
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>Statistik</h1>
-      <p>
+      <p className="back-link">
         <Link to="/">Zurück zum Dashboard</Link>
       </p>
 
-      <p>Karten insgesamt: {stats.total}</p>
-      <p>Fällig heute: {stats.due}</p>
-      <p>Heute wiederholt: {stats.reviewedToday}</p>
-      <p>Diese Woche wiederholt: {stats.reviewedThisWeek}</p>
+      <div className="stats-row">
+        <div className="stat">
+          <strong>{stats.total}</strong>
+          <span>Insgesamt</span>
+        </div>
+        <div className="stat">
+          <strong>{stats.due}</strong>
+          <span>Fällig heute</span>
+        </div>
+      </div>
+      <div className="stats-row">
+        <div className="stat">
+          <strong>{stats.reviewedToday}</strong>
+          <span>Heute wiederholt</span>
+        </div>
+        <div className="stat">
+          <strong>{stats.reviewedThisWeek}</strong>
+          <span>Diese Woche</span>
+        </div>
+      </div>
 
       <h2>Nach Lektion</h2>
-      <ul>
+      <ul className="list">
         {stats.byLesson.map(({ label, count }) => (
-          <li key={label}>
+          <li className="list-item" key={label}>
             {label}: {count}
           </li>
         ))}
       </ul>
 
       <h2>Nach Level</h2>
-      <ul>
+      <ul className="list">
         {stats.byLevel.map(({ label, count }) => (
-          <li key={label}>
+          <li className="list-item" key={label}>
             {label}: {count}
           </li>
         ))}

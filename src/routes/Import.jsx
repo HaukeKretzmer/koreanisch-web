@@ -110,22 +110,22 @@ export default function Import() {
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>Import</h1>
-      <p>
+      <p className="back-link">
         <Link to="/">Zurück zum Dashboard</Link>
       </p>
 
       <input type="file" accept="application/json,.json" onChange={handleFileChange} />
 
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="error-text" role="alert">{error}</p>}
 
       {preview && data && (
         <div>
           <h2>Vorschau: {data.lesson.title}</h2>
           <p>Vokabeln: {preview.newVocab} neu, {preview.updatedVocab} aktualisiert</p>
           <p>Grammatik: {preview.newGrammar} neu, {preview.updatedGrammar} aktualisiert</p>
-          <button type="button" onClick={handleImport} disabled={importing}>
+          <button type="button" className="btn btn-primary btn-block" onClick={handleImport} disabled={importing}>
             {importing ? 'Importiere…' : 'Importieren'}
           </button>
         </div>
@@ -134,7 +134,7 @@ export default function Import() {
       {done && (
         <div>
           <p>Import abgeschlossen.</p>
-          <p>
+          <p className="back-link">
             <Link to="/lessons">Zu den Lektionen</Link>
           </p>
         </div>

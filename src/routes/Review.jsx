@@ -5,20 +5,22 @@ import { updateSrsFields } from '../data/cards.js'
 import { sm2Update } from '../srs/sm2.js'
 
 const RATING_BUTTONS = [
-  { label: 'Nochmal', quality: 0 },
-  { label: 'Schwer', quality: 3 },
-  { label: 'Gut', quality: 4 },
-  { label: 'Leicht', quality: 5 },
+  { label: 'Nochmal', quality: 0, className: 'rating-again' },
+  { label: 'Schwer', quality: 3, className: 'rating-hard' },
+  { label: 'Gut', quality: 4, className: 'rating-good' },
+  { label: 'Leicht', quality: 5, className: 'rating-easy' },
 ]
 
 function CardFront({ card, onReveal }) {
   const front = card.collection === 'grammar' ? card.pattern || card.title : card.korean
 
   return (
-    <button type="button" onClick={onReveal}>
-      <p>{front}</p>
-      {card.collection === 'vocabulary' && card.romanization && <p>{card.romanization}</p>}
-      <p>(antippen zum Aufdecken)</p>
+    <button type="button" className="review-card" onClick={onReveal}>
+      <p className="korean">{front}</p>
+      {card.collection === 'vocabulary' && card.romanization && (
+        <p className="romanization">{card.romanization}</p>
+      )}
+      <p className="hint">(antippen zum Aufdecken)</p>
     </button>
   )
 }
@@ -26,10 +28,10 @@ function CardFront({ card, onReveal }) {
 function CardBack({ card }) {
   if (card.collection === 'grammar') {
     return (
-      <div>
-        <p>{card.explanation_de}</p>
+      <div className="review-back">
+        <p className="translation">{card.explanation_de}</p>
         {(card.examples ?? []).map((example, index) => (
-          <p key={index}>
+          <p className="example" key={index}>
             {example.korean} – {example.translation_de}
           </p>
         ))}
@@ -38,10 +40,10 @@ function CardBack({ card }) {
   }
 
   return (
-    <div>
-      <p>{card.translation_de}</p>
-      {card.example_sentence_kr && <p>{card.example_sentence_kr}</p>}
-      {card.example_sentence_de && <p>{card.example_sentence_de}</p>}
+    <div className="review-back">
+      <p className="translation">{card.translation_de}</p>
+      {card.example_sentence_kr && <p className="example">{card.example_sentence_kr}</p>}
+      {card.example_sentence_de && <p className="example">{card.example_sentence_de}</p>}
     </div>
   )
 }
@@ -73,28 +75,36 @@ export default function Review() {
   }
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p className="error-text" role="alert">{error}</p>
   }
 
   if (cards === null) {
-    return <p>Lade fällige Karten…</p>
+    return <p className="loading-text">Lade fällige Karten…</p>
   }
 
   if (cards.length === 0) {
     return (
-      <div>
-        <p>Keine fälligen Karten.</p>
-        <Link to="/">Zurück zum Dashboard</Link>
+      <div className="page">
+        <div className="summary">
+          <p>Keine fälligen Karten.</p>
+          <p className="back-link">
+            <Link to="/">Zurück zum Dashboard</Link>
+          </p>
+        </div>
       </div>
     )
   }
 
   if (currentIndex >= cards.length) {
     return (
-      <div>
-        <h1>Runde abgeschlossen</h1>
-        <p>Du hast {reviewedCount} Karte{reviewedCount === 1 ? '' : 'n'} wiederholt.</p>
-        <Link to="/">Zurück zum Dashboard</Link>
+      <div className="page">
+        <div className="summary">
+          <h1>Runde abgeschlossen</h1>
+          <p>Du hast {reviewedCount} Karte{reviewedCount === 1 ? '' : 'n'} wiederholt.</p>
+          <p className="back-link">
+            <Link to="/">Zurück zum Dashboard</Link>
+          </p>
+        </div>
       </div>
     )
   }
@@ -102,9 +112,9 @@ export default function Review() {
   const currentCard = cards[currentIndex]
 
   return (
-    <div>
+    <div className="page">
       <h1>Review</h1>
-      <p>
+      <p className="review-progress">
         Karte {currentIndex + 1} von {cards.length}
       </p>
       {!revealed ? (
@@ -112,9 +122,14 @@ export default function Review() {
       ) : (
         <>
           <CardBack card={currentCard} />
-          <div>
-            {RATING_BUTTONS.map(({ label, quality }) => (
-              <button key={label} type="button" onClick={() => handleRate(quality)}>
+          <div className="rating-buttons">
+            {RATING_BUTTONS.map(({ label, quality, className }) => (
+              <button
+                key={label}
+                type="button"
+                className={`btn ${className}`}
+                onClick={() => handleRate(quality)}
+              >
                 {label}
               </button>
             ))}

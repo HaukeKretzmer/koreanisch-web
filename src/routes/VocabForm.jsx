@@ -105,25 +105,25 @@ export default function VocabForm() {
   }
 
   if (loading) {
-    return <p>Lade Vokabel…</p>
+    return <p className="loading-text">Lade Vokabel…</p>
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>{isEdit ? 'Vokabel bearbeiten' : 'Neue Vokabel'}</h1>
-      <p>
+      <p className="back-link">
         <Link to="/lessons">Zurück zu den Lektionen</Link>
       </p>
-      <form onSubmit={handleSubmit}>
-        <div>
+      <form className="form" onSubmit={handleSubmit}>
+        <div className="field">
           <label htmlFor="korean">Koreanisch</label>
           <input id="korean" value={form.korean} onChange={updateField('korean')} required />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="romanization">Romanisierung</label>
           <input id="romanization" value={form.romanization} onChange={updateField('romanization')} />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="translation_de">Übersetzung (Deutsch)</label>
           <input
             id="translation_de"
@@ -132,11 +132,11 @@ export default function VocabForm() {
             required
           />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="part_of_speech">Wortart</label>
           <input id="part_of_speech" value={form.part_of_speech} onChange={updateField('part_of_speech')} />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="example_sentence_kr">Beispielsatz (Koreanisch)</label>
           <input
             id="example_sentence_kr"
@@ -144,7 +144,7 @@ export default function VocabForm() {
             onChange={updateField('example_sentence_kr')}
           />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="example_sentence_de">Beispielsatz (Deutsch)</label>
           <input
             id="example_sentence_de"
@@ -152,15 +152,15 @@ export default function VocabForm() {
             onChange={updateField('example_sentence_de')}
           />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="tags">Tags (kommagetrennt)</label>
           <input id="tags" value={form.tags} onChange={updateField('tags')} />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="level">Level</label>
           <input id="level" value={form.level} onChange={updateField('level')} />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="lessonId">Lektion</label>
           <select id="lessonId" value={form.lessonId} onChange={updateField('lessonId')}>
             <option value="">– keine –</option>
@@ -171,8 +171,8 @@ export default function VocabForm() {
             ))}
           </select>
         </div>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={saving}>
+        {error && <p className="error-text" role="alert">{error}</p>}
+        <button type="submit" className="btn btn-primary btn-block" disabled={saving}>
           {saving ? 'Speichere…' : 'Speichern'}
         </button>
       </form>

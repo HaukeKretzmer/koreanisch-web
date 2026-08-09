@@ -13,28 +13,31 @@ export default function Lessons() {
   }, [])
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p className="error-text" role="alert">{error}</p>
   }
 
   if (lessons === null) {
-    return <p>Lade Lektionen…</p>
+    return <p className="loading-text">Lade Lektionen…</p>
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>Lektionen</h1>
-      <p>
+      <p className="back-link">
         <Link to="/">Zurück zum Dashboard</Link>
       </p>
       {lessons.length === 0 ? (
         <p>Noch keine Lektionen importiert.</p>
       ) : (
-        <ul>
+        <ul className="list">
           {lessons.map((lesson) => (
-            <li key={lesson.id}>
+            <li className="list-item" key={lesson.id}>
               <Link to={`/lessons/${lesson.id}`}>{lesson.title}</Link>
-              {lesson.level && <> – {lesson.level}</>}
-              {lesson.topic && <> – {lesson.topic}</>}
+              {(lesson.level || lesson.topic) && (
+                <span className="meta">
+                  {[lesson.level, lesson.topic].filter(Boolean).join(' · ')}
+                </span>
+              )}
             </li>
           ))}
         </ul>

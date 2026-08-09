@@ -21,36 +21,46 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div>
-      <h1>Dashboard</h1>
+    <div className="page">
+      <div className="top-bar">
+        <h1>Dashboard</h1>
+        <button type="button" className="btn btn-ghost" onClick={() => signOut(auth)}>
+          Abmelden
+        </button>
+      </div>
       <p>Angemeldet als {user?.email}</p>
-      <button type="button" onClick={() => signOut(auth)}>
-        Abmelden
-      </button>
 
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="error-text" role="alert">{error}</p>}
       {counts && (
-        <div>
-          <p>Fällige Karten heute: {counts.due}</p>
-          <p>Karten insgesamt: {counts.total}</p>
+        <div className="stats-row">
+          <div className="stat">
+            <strong>{counts.due}</strong>
+            <span>Fällig heute</span>
+          </div>
+          <div className="stat">
+            <strong>{counts.total}</strong>
+            <span>Karten insgesamt</span>
+          </div>
         </div>
       )}
 
-      <p>
-        <Link to="/review">Review starten</Link>
-      </p>
-      <p>
-        <Link to="/lessons">Lektionen</Link>
-      </p>
-      <p>
-        <Link to="/import">Import</Link>
-      </p>
-      <p>
-        <Link to="/vocab/new">Neue Vokabel</Link>
-      </p>
-      <p>
-        <Link to="/stats">Statistik</Link>
-      </p>
+      <div className="nav-list">
+        <Link className="nav-item" to="/review">
+          Review starten
+        </Link>
+        <Link className="nav-item" to="/lessons">
+          Lektionen
+        </Link>
+        <Link className="nav-item" to="/import">
+          Import
+        </Link>
+        <Link className="nav-item" to="/vocab/new">
+          Neue Vokabel
+        </Link>
+        <Link className="nav-item" to="/stats">
+          Statistik
+        </Link>
+      </div>
     </div>
   )
 }

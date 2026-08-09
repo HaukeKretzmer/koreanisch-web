@@ -25,42 +25,47 @@ export default function LessonDetail() {
   }, [id])
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p className="error-text" role="alert">{error}</p>
   }
 
   if (!loaded) {
-    return <p>Lade Lektion…</p>
+    return <p className="loading-text">Lade Lektion…</p>
   }
 
   if (!lesson) {
     return (
-      <div>
+      <div className="page">
         <p>Lektion nicht gefunden.</p>
-        <Link to="/lessons">Zurück zur Lektionsübersicht</Link>
+        <p className="back-link">
+          <Link to="/lessons">Zurück zur Lektionsübersicht</Link>
+        </p>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>{lesson.title}</h1>
-      <p>
+      <p className="back-link">
         <Link to="/lessons">Zurück zur Lektionsübersicht</Link>
       </p>
       {lesson.description && <p>{lesson.description}</p>}
-      {lesson.level && <p>Level: {lesson.level}</p>}
-      {lesson.topic && <p>Thema: {lesson.topic}</p>}
+      {(lesson.level || lesson.topic) && (
+        <p className="meta">{[lesson.level, lesson.topic].filter(Boolean).join(' · ')}</p>
+      )}
 
       <h2>Vokabeln ({vocab.length})</h2>
       {vocab.length === 0 ? (
         <p>Keine Vokabeln in dieser Lektion.</p>
       ) : (
-        <ul>
+        <ul className="list">
           {vocab.map((card) => (
-            <li key={card.id}>
+            <li className="list-item" key={card.id}>
+              <Link className="edit-link" to={`/vocab/${card.id}/edit`}>
+                Bearbeiten
+              </Link>
               {card.korean}
-              {card.romanization && <> ({card.romanization})</>} – {card.translation_de}{' '}
-              <Link to={`/vocab/${card.id}/edit`}>Bearbeiten</Link>
+              {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
             </li>
           ))}
         </ul>
@@ -70,9 +75,9 @@ export default function LessonDetail() {
       {grammar.length === 0 ? (
         <p>Keine Grammatikpunkte in dieser Lektion.</p>
       ) : (
-        <ul>
+        <ul className="list">
           {grammar.map((card) => (
-            <li key={card.id}>
+            <li className="list-item" key={card.id}>
               {card.pattern || card.title} – {card.explanation_de}
             </li>
           ))}

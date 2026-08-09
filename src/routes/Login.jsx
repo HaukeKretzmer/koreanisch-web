@@ -25,10 +25,10 @@ export default function Login() {
   }
 
   return (
-    <div>
+    <div className="page">
       <h1>Anmelden</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
+      <form className="form" onSubmit={handleSubmit}>
+        <div className="field">
           <label htmlFor="email">E-Mail</label>
           <input
             id="email"
@@ -39,7 +39,7 @@ export default function Login() {
             required
           />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="password">Passwort</label>
           <input
             id="password"
@@ -50,8 +50,8 @@ export default function Login() {
             required
           />
         </div>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={submitting}>
+        {error && <p className="error-text" role="alert">{error}</p>}
+        <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
           {submitting ? 'Anmelden…' : 'Anmelden'}
         </button>
       </form>
