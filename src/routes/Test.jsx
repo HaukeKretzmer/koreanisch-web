@@ -99,18 +99,24 @@ function normalize(text) {
   return text.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
-// Manche Übersetzungen listen mehrere gültige Alternativen kommagetrennt auf (z.B. "Haus,
-// Zuhause"). Andere enthalten ein Komma innerhalb einer Klammer-Erklärung (z.B. "Bulgogi
-// (gegrilltes, mariniertes Rindfleisch)") - dort ist es keine Alternative, sondern Teil des
-// Textes. Es wird daher nur an Kommas außerhalb von Klammern gesplittet.
-function splitTopLevel(text) {
+// Übersetzungen in den Inhalten nutzen verschiedene Notationen für "mehrere gültige Antworten"
+// bzw. optionale Zusätze:
+//  - Komma außerhalb von Klammern:      "Haus, Zuhause"              -> zwei Alternativen
+//  - " / " (mit Leerzeichen):           "Morgen / Frühstück"         -> zwei Alternativen
+//  - Klammer mit Leerzeichen davor:     "drei (Sino-koreanisch)"     -> Klammerteil ist optional
+//  - Klammer direkt am Wort:            "Angestellte(r)"             -> Klammerinhalt verschmilzt
+//  - Komma INNERHALB einer Klammer:     "Bulgogi (gegrilltes, mariniertes Rindfleisch)"
+//                                       -> kein Trenner, gehört zum Text
+// splitTopLevel trennt nur an einem Zeichen außerhalb von Klammern, damit der letzte Fall nicht
+// fälschlich aufgespalten wird.
+function splitTopLevel(text, separator) {
   const parts = []
   let depth = 0
   let current = ''
   for (const char of text) {
     if (char === '(') depth += 1
     if (char === ')') depth -= 1
-    if (char === ',' && depth <= 0) {
+    if (char === separator && depth <= 0) {
       parts.push(current)
       current = ''
     } else {
@@ -121,9 +127,30 @@ function splitTopLevel(text) {
   return parts
 }
 
+function expandAnswerVariants(text) {
+  const variants = new Set([text])
+  // Erklärende Klammer mit Leerzeichen davor: ganz weglassen ("drei (Sino-koreanisch)" -> "drei")
+  variants.add(text.replace(/\s+\([^)]*\)/g, ''))
+  // Klammer direkt am Wort: nur die Klammerzeichen entfernen ("Angestellte(r)" -> "Angestellter")
+  variants.add(text.replace(/\(([^)]*)\)/g, '$1'))
+  // Schrägstrich direkt am Wort (Geschlechtsform): verschmelzen oder weglassen
+  if (/\S\/\S/.test(text)) {
+    variants.add(text.replace(/\/(\S+)/g, '$1'))
+    variants.add(text.replace(/\/\S+/g, ''))
+  }
+  return [...variants].map((variant) => variant.trim()).filter(Boolean)
+}
+
+function getAcceptableAnswers(correctAnswer) {
+  const parts = splitTopLevel(correctAnswer, ',').flatMap((part) =>
+    part.includes(' / ') ? part.split(' / ') : [part],
+  )
+  const variants = parts.flatMap(expandAnswerVariants)
+  return new Set(variants.map(normalize))
+}
+
 function isTypedAnswerCorrect(typedAnswer, correctAnswer) {
-  const alternatives = splitTopLevel(correctAnswer).map(normalize)
-  return alternatives.includes(normalize(typedAnswer))
+  return getAcceptableAnswers(correctAnswer).has(normalize(typedAnswer))
 }
 
 function ClozeSentence({ sentence }) {
