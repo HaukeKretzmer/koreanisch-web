@@ -96,6 +96,13 @@ function normalize(text) {
   return text.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
+// Manche Übersetzungen listen mehrere gültige Alternativen kommagetrennt auf (z.B. "Haus,
+// Zuhause") - jede davon soll als richtige Antwort zählen, nicht nur der volle String.
+function isTypedAnswerCorrect(typedAnswer, correctAnswer) {
+  const alternatives = correctAnswer.split(',').map(normalize)
+  return alternatives.includes(normalize(typedAnswer))
+}
+
 function ClozeSentence({ sentence }) {
   const [before, after] = sentence.split('___')
   return (
@@ -153,7 +160,7 @@ export default function Test() {
     event.preventDefault()
     if (feedback) return
     const question = questions[currentIndex]
-    grade(normalize(typedAnswer) === normalize(question.answer))
+    grade(isTypedAnswerCorrect(typedAnswer, question.answer))
   }
 
   function handleChoiceClick(option) {
