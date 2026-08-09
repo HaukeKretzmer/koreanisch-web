@@ -739,6 +739,13 @@ input[type='file'] {
   text-align: center;
 }
 
+.cloze-blank {
+  display: inline-block;
+  min-width: 36px;
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
+}
+
 .empty-state svg {
   color: var(--accent);
   opacity: 0.7;

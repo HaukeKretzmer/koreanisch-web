@@ -26,6 +26,43 @@ function buildChoiceOptions(correctAnswer, pool, getValue) {
   return shuffle([correctAnswer, ...distractors])
 }
 
+function buildGrammarQuestion(card, grammarCards, allClozeAnswers) {
+  const clozeOptions = Array.isArray(card.cloze) ? card.cloze : []
+  const useCloze = clozeOptions.length > 0 && Math.random() < 0.5
+
+  if (useCloze) {
+    const clozeItem = clozeOptions[Math.floor(Math.random() * clozeOptions.length)]
+    const options = Math.random() < 0.5
+      ? buildChoiceOptions(clozeItem.answer, allClozeAnswers, (value) => value)
+      : null
+    return {
+      collection: 'grammar',
+      card,
+      kind: 'cloze',
+      mode: options ? 'choice' : 'typed',
+      prompt: clozeItem.sentence,
+      secondary: clozeItem.translation_de,
+      answer: clozeItem.answer,
+      options,
+    }
+  }
+
+  const answer = card.pattern || card.title
+  const options = Math.random() < 0.5
+    ? buildChoiceOptions(answer, grammarCards, (c) => c.pattern || c.title)
+    : null
+  return {
+    collection: 'grammar',
+    card,
+    kind: 'pattern',
+    mode: options ? 'choice' : 'typed',
+    prompt: card.explanation_de,
+    secondary: null,
+    answer,
+    options,
+  }
+}
+
 function buildQuestions(vocabCards, grammarCards) {
   const vocabQuestions = shuffle(vocabCards)
     .slice(0, VOCAB_TARGET)
@@ -45,29 +82,29 @@ function buildQuestions(vocabCards, grammarCards) {
       }
     })
 
+  const allClozeAnswers = grammarCards.flatMap((card) =>
+    Array.isArray(card.cloze) ? card.cloze.map((item) => item.answer) : [],
+  )
   const grammarQuestions = shuffle(grammarCards)
     .slice(0, GRAMMAR_TARGET)
-    .map((card) => {
-      const answer = card.pattern || card.title
-      const options = Math.random() < 0.5
-        ? buildChoiceOptions(answer, grammarCards, (c) => c.pattern || c.title)
-        : null
-      return {
-        collection: 'grammar',
-        card,
-        mode: options ? 'choice' : 'typed',
-        prompt: card.explanation_de,
-        secondary: null,
-        answer,
-        options,
-      }
-    })
+    .map((card) => buildGrammarQuestion(card, grammarCards, allClozeAnswers))
 
   return { vocabQuestions, grammarQuestions }
 }
 
 function normalize(text) {
   return text.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+function ClozeSentence({ sentence }) {
+  const [before, after] = sentence.split('___')
+  return (
+    <p className="korean">
+      {before}
+      <span className="cloze-blank">___</span>
+      {after}
+    </p>
+  )
 }
 
 export default function Test() {
@@ -227,6 +264,8 @@ export default function Test() {
               <p className="korean">{question.prompt}</p>
               <SpeakButton text={question.prompt} />
             </div>
+          ) : question.kind === 'cloze' ? (
+            <ClozeSentence sentence={question.prompt} />
           ) : (
             <p className="korean">{question.prompt}</p>
           )}

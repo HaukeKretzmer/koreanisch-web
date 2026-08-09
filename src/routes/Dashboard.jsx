@@ -14,6 +14,7 @@ import {
   StatsIcon,
   TestIcon,
   SwapIcon,
+  ConjugateIcon,
 } from '../components/icons.jsx'
 
 export default function Dashboard() {
@@ -80,6 +81,12 @@ export default function Dashboard() {
             <TestIcon />
           </span>
           Tagestest
+        </Link>
+        <Link className="nav-item" to="/conjugate">
+          <span className="nav-icon">
+            <ConjugateIcon />
+          </span>
+          Konjugation üben
         </Link>
         <Link className="nav-item" to="/lessons">
           <span className="nav-icon">

@@ -59,6 +59,17 @@ export async function updateSrsFields(collectionName, id, srsFields) {
   )
 }
 
+// Getrennter Fortschritt für den Produktionsmodus (Deutsch -> Koreanisch), unabhängig von den
+// Erkennungs-SRS-Feldern oben. Ersetzt das gesamte productionSrs-Objekt (kein Teil-Merge), da
+// sm2Update immer einen vollständigen neuen Zustand liefert.
+export async function updateProductionSrsFields(collectionName, id, srsFields) {
+  await setDoc(
+    cardDoc(collectionName, id),
+    { productionSrs: { ...srsFields }, updatedAt: serverTimestamp() },
+    { merge: true },
+  )
+}
+
 // Merge-Write: Inhaltsfelder werden überschrieben, SRS-Felder nie angefasst.
 // Existiert die Karte noch nicht, werden zusätzlich die SRS-Startwerte gesetzt.
 export async function upsertContentPreservingSrs(collectionName, id, contentFields) {

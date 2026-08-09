@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { getDueCards } from '../data/dueCards.js'
+import { getDueCards, getDueProductionCards } from '../data/dueCards.js'
 import { getLessonCards } from '../data/lessonCards.js'
 import { getLesson } from '../data/lessons.js'
-import { updateSrsFields } from '../data/cards.js'
+import { updateSrsFields, updateProductionSrsFields } from '../data/cards.js'
 import { sm2Update } from '../srs/sm2.js'
+
+const NEW_SRS_STATE = { repetitions: 0, easeFactor: 2.5, intervalDays: 0 }
 import SpeakButton from '../components/SpeakButton.jsx'
 import { EmptyCheckIcon, EmptyBoxIcon } from '../components/icons.jsx'
 import { SkeletonBlock } from '../components/Skeleton.jsx'
@@ -107,11 +109,12 @@ export default function Review() {
         })
         .catch((err) => setError(err.message))
     } else {
-      getDueCards()
+      const fetchDue = isProduction ? getDueProductionCards : getDueCards
+      fetchDue()
         .then(setCards)
         .catch((err) => setError(err.message))
     }
-  }, [lessonId])
+  }, [lessonId, isProduction])
 
   function reveal() {
     if (revealed) return
@@ -120,9 +123,14 @@ export default function Review() {
 
   async function handleRate(quality) {
     const currentCard = cards[currentIndex]
-    const updatedSrs = sm2Update(currentCard, quality)
+    const srsState = isProduction ? currentCard.productionSrs ?? NEW_SRS_STATE : currentCard
+    const updatedSrs = sm2Update(srsState, quality)
     try {
-      await updateSrsFields(currentCard.collection, currentCard.id, updatedSrs)
+      if (isProduction) {
+        await updateProductionSrsFields(currentCard.collection, currentCard.id, updatedSrs)
+      } else {
+        await updateSrsFields(currentCard.collection, currentCard.id, updatedSrs)
+      }
       setReviewedCount((count) => count + 1)
       setCurrentIndex((index) => index + 1)
       setRevealed(false)

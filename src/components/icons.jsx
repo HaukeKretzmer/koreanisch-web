@@ -80,6 +80,17 @@ export function SwapIcon() {
   )
 }
 
+export function ConjugateIcon() {
+  return (
+    <svg {...common}>
+      <path d="M4 6h9a4 4 0 0 1 4 4v1" />
+      <path d="M14 8l3 3-3 3" />
+      <path d="M20 18h-9a4 4 0 0 1-4-4v-1" />
+      <path d="M10 16l-3-3 3-3" />
+    </svg>
+  )
+}
+
 export function EmptyCheckIcon() {
   return (
     <svg {...common} width={48} height={48} strokeWidth={1.4}>
