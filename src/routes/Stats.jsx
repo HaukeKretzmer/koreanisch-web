@@ -4,6 +4,7 @@ import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import { getAllLessons } from '../data/lessons.js'
 import { getDueCards } from '../data/dueCards.js'
+import { getRecentTestResults } from '../data/testResults.js'
 
 function startOfDay(date) {
   const start = new Date(date)
@@ -33,6 +34,14 @@ function groupCount(cards, field) {
 export default function Stats() {
   const [stats, setStats] = useState(null)
   const [error, setError] = useState('')
+
+  const [testHistory, setTestHistory] = useState(null)
+
+  useEffect(() => {
+    getRecentTestResults(5)
+      .then(setTestHistory)
+      .catch((err) => setError(err.message))
+  }, [])
 
   useEffect(() => {
     Promise.all([getAllVocab(), getAllGrammar(), getAllLessons(), getDueCards()])
@@ -123,6 +132,28 @@ export default function Stats() {
           </li>
         ))}
       </ul>
+
+      <h2>Testverlauf</h2>
+      {!testHistory ? (
+        <p className="loading-text">Lade Testverlauf…</p>
+      ) : testHistory.length === 0 ? (
+        <p>Noch kein Tagestest abgeschlossen.</p>
+      ) : (
+        <ul className="test-history">
+          {testHistory.map((result) => {
+            const total = result.vocabTotal + result.grammarTotal
+            const correct = result.vocabCorrect + result.grammarCorrect
+            const percent = total > 0 ? Math.round((correct / total) * 100) : 0
+            const date = result.createdAt?.toDate ? result.createdAt.toDate() : null
+            return (
+              <li key={result.id}>
+                <span>{date ? date.toLocaleDateString('de-DE') : '–'}</span>
+                <span className="score">{percent}%</span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }
