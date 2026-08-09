@@ -746,6 +746,13 @@ input[type='file'] {
   color: var(--accent);
 }
 
+.test-instruction {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
 .empty-state svg {
   color: var(--accent);
   opacity: 0.7;

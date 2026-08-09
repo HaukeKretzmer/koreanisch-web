@@ -40,6 +40,7 @@ function buildGrammarQuestion(card, grammarCards, allClozeAnswers) {
       card,
       kind: 'cloze',
       mode: options ? 'choice' : 'typed',
+      instruction: 'Was fehlt in der Lücke?',
       prompt: clozeItem.sentence,
       secondary: clozeItem.translation_de,
       answer: clozeItem.answer,
@@ -56,6 +57,7 @@ function buildGrammarQuestion(card, grammarCards, allClozeAnswers) {
     card,
     kind: 'pattern',
     mode: options ? 'choice' : 'typed',
+    instruction: 'Welches Grammatikmuster wird hier beschrieben?',
     prompt: card.explanation_de,
     secondary: null,
     answer,
@@ -75,6 +77,7 @@ function buildQuestions(vocabCards, grammarCards) {
         collection: 'vocabulary',
         card,
         mode: options ? 'choice' : 'typed',
+        instruction: 'Wie heißt das auf Deutsch?',
         prompt: card.korean,
         secondary: card.romanization,
         answer,
@@ -285,6 +288,7 @@ export default function Test() {
       </p>
 
       <div style={cardAccentStyle}>
+        {question.instruction && <p className="test-instruction">{question.instruction}</p>}
         <div className="review-card">
           {question.collection === 'vocabulary' ? (
             <div className="korean-row">
