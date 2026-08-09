@@ -58,6 +58,9 @@ export default function Dashboard() {
       <p>
         <Link to="/review">Review starten</Link>
       </p>
+      <p>
+        <Link to="/lessons">Lektionen</Link>
+      </p>
       <DataAccessDebug />
     </div>
   )

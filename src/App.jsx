@@ -4,6 +4,8 @@ import { ProtectedRoute } from './auth/ProtectedRoute.jsx'
 import Login from './routes/Login.jsx'
 import Dashboard from './routes/Dashboard.jsx'
 import Review from './routes/Review.jsx'
+import Lessons from './routes/Lessons.jsx'
+import LessonDetail from './routes/LessonDetail.jsx'
 
 function App() {
   return (
@@ -24,6 +26,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Review />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lessons"
+            element={
+              <ProtectedRoute>
+                <Lessons />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lessons/:id"
+            element={
+              <ProtectedRoute>
+                <LessonDetail />
               </ProtectedRoute>
             }
           />
