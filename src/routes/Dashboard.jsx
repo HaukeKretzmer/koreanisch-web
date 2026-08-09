@@ -64,6 +64,9 @@ export default function Dashboard() {
       <p>
         <Link to="/import">Import</Link>
       </p>
+      <p>
+        <Link to="/vocab/new">Neue Vokabel</Link>
+      </p>
       <DataAccessDebug />
     </div>
   )

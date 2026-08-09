@@ -32,6 +32,11 @@ export async function getAllCards(collectionName) {
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
 }
 
+export async function getCard(collectionName, id) {
+  const snapshot = await getDoc(cardDoc(collectionName, id))
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
+}
+
 export async function getDueCardsIn(collectionName, now) {
   const dueQuery = query(
     cardsCollection(collectionName),

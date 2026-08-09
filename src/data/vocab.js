@@ -1,9 +1,13 @@
-import { getAllCards, updateSrsFields, upsertContentPreservingSrs } from './cards.js'
+import { getAllCards, getCard, updateSrsFields, upsertContentPreservingSrs } from './cards.js'
 
 export const VOCAB_COLLECTION = 'vocabulary'
 
 export function getAllVocab() {
   return getAllCards(VOCAB_COLLECTION)
+}
+
+export function getVocab(id) {
+  return getCard(VOCAB_COLLECTION, id)
 }
 
 export function updateVocabSrs(id, srsFields) {

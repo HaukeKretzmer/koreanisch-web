@@ -7,6 +7,7 @@ import Review from './routes/Review.jsx'
 import Lessons from './routes/Lessons.jsx'
 import LessonDetail from './routes/LessonDetail.jsx'
 import Import from './routes/Import.jsx'
+import VocabForm from './routes/VocabForm.jsx'
 
 function App() {
   return (
@@ -51,6 +52,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Import />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vocab/new"
+            element={
+              <ProtectedRoute>
+                <VocabForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vocab/:id/edit"
+            element={
+              <ProtectedRoute>
+                <VocabForm />
               </ProtectedRoute>
             }
           />

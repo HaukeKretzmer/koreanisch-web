@@ -59,7 +59,8 @@ export default function LessonDetail() {
           {vocab.map((card) => (
             <li key={card.id}>
               {card.korean}
-              {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
+              {card.romanization && <> ({card.romanization})</>} – {card.translation_de}{' '}
+              <Link to={`/vocab/${card.id}/edit`}>Bearbeiten</Link>
             </li>
           ))}
         </ul>
