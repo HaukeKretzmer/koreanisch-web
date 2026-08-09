@@ -97,9 +97,29 @@ function normalize(text) {
 }
 
 // Manche Übersetzungen listen mehrere gültige Alternativen kommagetrennt auf (z.B. "Haus,
-// Zuhause") - jede davon soll als richtige Antwort zählen, nicht nur der volle String.
+// Zuhause"). Andere enthalten ein Komma innerhalb einer Klammer-Erklärung (z.B. "Bulgogi
+// (gegrilltes, mariniertes Rindfleisch)") - dort ist es keine Alternative, sondern Teil des
+// Textes. Es wird daher nur an Kommas außerhalb von Klammern gesplittet.
+function splitTopLevel(text) {
+  const parts = []
+  let depth = 0
+  let current = ''
+  for (const char of text) {
+    if (char === '(') depth += 1
+    if (char === ')') depth -= 1
+    if (char === ',' && depth <= 0) {
+      parts.push(current)
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  parts.push(current)
+  return parts
+}
+
 function isTypedAnswerCorrect(typedAnswer, correctAnswer) {
-  const alternatives = correctAnswer.split(',').map(normalize)
+  const alternatives = splitTopLevel(correctAnswer).map(normalize)
   return alternatives.includes(normalize(typedAnswer))
 }
 
