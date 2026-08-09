@@ -49,10 +49,10 @@ export default function Dashboard() {
             <strong>{counts.due}</strong>
             <span>Fällig heute</span>
           </div>
-          <div className="stat">
+          <Link className="stat stat-link" to="/cards">
             <strong>{counts.total}</strong>
             <span>Karten insgesamt</span>
-          </div>
+          </Link>
         </div>
       )}
 

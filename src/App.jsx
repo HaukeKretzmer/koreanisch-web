@@ -10,6 +10,7 @@ import Import from './routes/Import.jsx'
 import VocabForm from './routes/VocabForm.jsx'
 import Stats from './routes/Stats.jsx'
 import Test from './routes/Test.jsx'
+import Cards from './routes/Cards.jsx'
 
 function App() {
   return (
@@ -94,6 +95,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Test />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cards"
+            element={
+              <ProtectedRoute>
+                <Cards />
               </ProtectedRoute>
             }
           />
