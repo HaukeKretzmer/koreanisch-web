@@ -8,6 +8,7 @@ import Lessons from './routes/Lessons.jsx'
 import LessonDetail from './routes/LessonDetail.jsx'
 import Import from './routes/Import.jsx'
 import VocabForm from './routes/VocabForm.jsx'
+import Stats from './routes/Stats.jsx'
 
 function App() {
   return (
@@ -68,6 +69,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <VocabForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stats"
+            element={
+              <ProtectedRoute>
+                <Stats />
               </ProtectedRoute>
             }
           />
