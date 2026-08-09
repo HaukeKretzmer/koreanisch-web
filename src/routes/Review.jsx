@@ -6,6 +6,8 @@ import { getLesson } from '../data/lessons.js'
 import { updateSrsFields } from '../data/cards.js'
 import { sm2Update } from '../srs/sm2.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import { EmptyCheckIcon, EmptyBoxIcon } from '../components/icons.jsx'
+import { SkeletonBlock } from '../components/Skeleton.jsx'
 
 const RATING_BUTTONS = [
   { label: 'Nochmal', quality: 0, className: 'rating-again' },
@@ -22,22 +24,11 @@ function germanOf(card) {
   return card.collection === 'grammar' ? card.explanation_de : card.translation_de
 }
 
-function CardFront({ card, isProduction, onReveal }) {
+function CardFrontContent({ card, isProduction }) {
   const front = isProduction ? germanOf(card) : koreanOf(card)
 
   return (
-    <div
-      className="review-card"
-      role="button"
-      tabIndex={0}
-      onClick={onReveal}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onReveal()
-        }
-      }}
-    >
+    <>
       {isProduction ? (
         <p className="korean">{front}</p>
       ) : (
@@ -50,18 +41,18 @@ function CardFront({ card, isProduction, onReveal }) {
         <p className="romanization">{card.romanization}</p>
       )}
       <p className="hint">(antippen zum Aufdecken)</p>
-    </div>
+    </>
   )
 }
 
-function CardBack({ card, isProduction }) {
+function CardBackContent({ card, isProduction }) {
   const isGrammar = card.collection === 'grammar'
   const koreanText = koreanOf(card)
   const germanText = germanOf(card)
   const examples = isGrammar ? card.examples ?? [] : []
 
   return (
-    <div className="review-back">
+    <>
       {isProduction ? (
         <div className="korean-row">
           <p className="translation">{koreanText}</p>
@@ -89,7 +80,7 @@ function CardBack({ card, isProduction }) {
               {card.example_sentence_de}
             </p>
           )}
-    </div>
+    </>
   )
 }
 
@@ -122,6 +113,11 @@ export default function Review() {
     }
   }, [lessonId])
 
+  function reveal() {
+    if (revealed) return
+    setRevealed(true)
+  }
+
   async function handleRate(quality) {
     const currentCard = cards[currentIndex]
     const updatedSrs = sm2Update(currentCard, quality)
@@ -140,13 +136,18 @@ export default function Review() {
   }
 
   if (cards === null) {
-    return <p className="loading-text">Lade Karten…</p>
+    return (
+      <div className="page">
+        <SkeletonBlock />
+      </div>
+    )
   }
 
   if (cards.length === 0) {
     return (
       <div className="page">
-        <div className="summary">
+        <div className="empty-state">
+          {lessonId ? <EmptyBoxIcon /> : <EmptyCheckIcon />}
           <p>{lessonId ? 'Diese Lektion hat noch keine Karten.' : 'Keine fälligen Karten.'}</p>
           <p className="back-link">
             <Link to={backLink}>{backLabel}</Link>
@@ -172,6 +173,10 @@ export default function Review() {
 
   const currentCard = cards[currentIndex]
   const heading = lessonId ? `Review: ${lessonTitle ?? ''}` : 'Review'
+  const cardAccentStyle =
+    currentCard.collection === 'grammar'
+      ? { '--accent': 'var(--accent-grammar)', '--accent-2': 'var(--accent-grammar-2)' }
+      : undefined
 
   return (
     <div className="page">
@@ -182,24 +187,42 @@ export default function Review() {
       <p className="review-progress">
         Karte {currentIndex + 1} von {cards.length}
       </p>
-      {!revealed ? (
-        <CardFront card={currentCard} isProduction={isProduction} onReveal={() => setRevealed(true)} />
-      ) : (
-        <>
-          <CardBack card={currentCard} isProduction={isProduction} />
-          <div className="rating-buttons">
-            {RATING_BUTTONS.map(({ label, quality, className }) => (
-              <button
-                key={label}
-                type="button"
-                className={`btn ${className}`}
-                onClick={() => handleRate(quality)}
-              >
-                {label}
-              </button>
-            ))}
+
+      <div className="flip-container" style={cardAccentStyle}>
+        <div className={`flip-inner${revealed ? ' flipped' : ''}`}>
+          <div
+            className="review-card flip-front"
+            role="button"
+            tabIndex={0}
+            onClick={reveal}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                reveal()
+              }
+            }}
+          >
+            <CardFrontContent card={currentCard} isProduction={isProduction} />
           </div>
-        </>
+          <div className="review-back flip-back">
+            <CardBackContent card={currentCard} isProduction={isProduction} />
+          </div>
+        </div>
+      </div>
+
+      {revealed && (
+        <div className="rating-buttons" style={cardAccentStyle}>
+          {RATING_BUTTONS.map(({ label, quality, className }) => (
+            <button
+              key={label}
+              type="button"
+              className={`btn ${className}`}
+              onClick={() => handleRate(quality)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

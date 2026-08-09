@@ -5,6 +5,8 @@ import { getAllGrammar } from '../data/grammar.js'
 import { getAllLessons } from '../data/lessons.js'
 import { getDueCards } from '../data/dueCards.js'
 import { getRecentTestResults } from '../data/testResults.js'
+import { EmptyBoxIcon } from '../components/icons.jsx'
+import { SkeletonRows } from '../components/Skeleton.jsx'
 
 function startOfDay(date) {
   const start = new Date(date)
@@ -29,6 +31,31 @@ function groupCount(cards, field) {
     counts[key] = (counts[key] ?? 0) + 1
   }
   return counts
+}
+
+function BarChart({ rows }) {
+  const max = Math.max(1, ...rows.map((row) => row.count))
+  return (
+    <div className="bar-chart">
+      {rows.map(({ label, count }) => (
+        <div className="bar-row" key={label}>
+          <div className="bar-row-label">
+            <span>{label}</span>
+            <span>{count}</span>
+          </div>
+          <div className="bar-track">
+            <div className="bar-fill" style={{ width: `${(count / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function scoreBarClass(percent) {
+  if (percent < 50) return 'bar-fill-low'
+  if (percent < 80) return 'bar-fill-mid'
+  return 'bar-fill-high'
 }
 
 export default function Stats() {
@@ -84,11 +111,20 @@ export default function Stats() {
   }
 
   if (!stats) {
-    return <p className="loading-text">Lade Statistik…</p>
+    return (
+      <div className="page section-stats">
+        <h1>Statistik</h1>
+        <div className="stats-row">
+          <div className="skeleton" style={{ flex: 1, height: 74, borderRadius: 14 }} />
+          <div className="skeleton" style={{ flex: 1, height: 74, borderRadius: 14 }} />
+        </div>
+        <SkeletonRows count={3} />
+      </div>
+    )
   }
 
   return (
-    <div className="page">
+    <div className="page section-stats">
       <h1>Statistik</h1>
       <p className="back-link">
         <Link to="/">Zurück zum Dashboard</Link>
@@ -116,43 +152,42 @@ export default function Stats() {
       </div>
 
       <h2>Nach Lektion</h2>
-      <ul className="list">
-        {stats.byLesson.map(({ label, count }) => (
-          <li className="list-item" key={label}>
-            {label}: {count}
-          </li>
-        ))}
-      </ul>
+      <BarChart rows={stats.byLesson} />
 
       <h2>Nach Level</h2>
-      <ul className="list">
-        {stats.byLevel.map(({ label, count }) => (
-          <li className="list-item" key={label}>
-            {label}: {count}
-          </li>
-        ))}
-      </ul>
+      <BarChart rows={stats.byLevel} />
 
       <h2>Testverlauf</h2>
       {!testHistory ? (
-        <p className="loading-text">Lade Testverlauf…</p>
+        <SkeletonRows count={2} height={40} />
       ) : testHistory.length === 0 ? (
-        <p>Noch kein Tagestest abgeschlossen.</p>
+        <div className="empty-state">
+          <EmptyBoxIcon />
+          <p>Noch kein Tagestest abgeschlossen.</p>
+        </div>
       ) : (
-        <ul className="test-history">
+        <div className="bar-chart">
           {testHistory.map((result) => {
             const total = result.vocabTotal + result.grammarTotal
             const correct = result.vocabCorrect + result.grammarCorrect
             const percent = total > 0 ? Math.round((correct / total) * 100) : 0
             const date = result.createdAt?.toDate ? result.createdAt.toDate() : null
             return (
-              <li key={result.id}>
-                <span>{date ? date.toLocaleDateString('de-DE') : '–'}</span>
-                <span className="score">{percent}%</span>
-              </li>
+              <div className="bar-row" key={result.id}>
+                <div className="bar-row-label">
+                  <span>{date ? date.toLocaleDateString('de-DE') : '–'}</span>
+                  <span>{percent}%</span>
+                </div>
+                <div className="bar-track">
+                  <div
+                    className={`bar-fill ${scoreBarClass(percent)}`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
             )
           })}
-        </ul>
+        </div>
       )}
     </div>
   )

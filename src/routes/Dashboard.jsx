@@ -43,6 +43,12 @@ export default function Dashboard() {
       <p>Angemeldet als {user?.email}</p>
 
       {error && <p className="error-text" role="alert">{error}</p>}
+      {!counts && !error && (
+        <div className="stats-row">
+          <div className="skeleton" style={{ flex: 1, height: 74, borderRadius: 14 }} />
+          <div className="skeleton" style={{ flex: 1, height: 74, borderRadius: 14 }} />
+        </div>
+      )}
       {counts && (
         <div className="stats-row">
           <div className="stat">

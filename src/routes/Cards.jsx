@@ -4,6 +4,8 @@ import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import { getAllLessons } from '../data/lessons.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import { EmptyBoxIcon } from '../components/icons.jsx'
+import { SkeletonRows } from '../components/Skeleton.jsx'
 
 export default function Cards() {
   const [vocab, setVocab] = useState(null)
@@ -25,10 +27,6 @@ export default function Cards() {
     return <p className="error-text" role="alert">{error}</p>
   }
 
-  if (vocab === null || grammar === null) {
-    return <p className="loading-text">Lade Karten…</p>
-  }
-
   return (
     <div className="page">
       <h1>Alle Karten</h1>
@@ -36,47 +34,59 @@ export default function Cards() {
         <Link to="/">Zurück zum Dashboard</Link>
       </p>
 
-      <h2>Vokabeln ({vocab.length})</h2>
-      {vocab.length === 0 ? (
-        <p>Noch keine Vokabeln vorhanden.</p>
+      {vocab === null || grammar === null ? (
+        <SkeletonRows count={6} />
       ) : (
-        <ul className="list">
-          {vocab.map((card) => (
-            <li className="list-item" key={card.id}>
-              <Link className="edit-link" to={`/vocab/${card.id}/edit`}>
-                Bearbeiten
-              </Link>
-              <span className="word-row">
-                {card.korean}
-                <SpeakButton text={card.korean} />
-              </span>
-              {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
-              {card.lessonId && lessonTitles[card.lessonId] && (
-                <span className="meta">{lessonTitles[card.lessonId]}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+        <>
+          <h2>Vokabeln ({vocab.length})</h2>
+          {vocab.length === 0 ? (
+            <div className="empty-state">
+              <EmptyBoxIcon />
+              <p>Noch keine Vokabeln vorhanden.</p>
+            </div>
+          ) : (
+            <ul className="list">
+              {vocab.map((card) => (
+                <li className="list-item" key={card.id}>
+                  <Link className="edit-link" to={`/vocab/${card.id}/edit`}>
+                    Bearbeiten
+                  </Link>
+                  <span className="word-row">
+                    {card.korean}
+                    <SpeakButton text={card.korean} />
+                  </span>
+                  {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
+                  {card.lessonId && lessonTitles[card.lessonId] && (
+                    <span className="meta">{lessonTitles[card.lessonId]}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
 
-      <h2>Grammatik ({grammar.length})</h2>
-      {grammar.length === 0 ? (
-        <p>Noch keine Grammatikpunkte vorhanden.</p>
-      ) : (
-        <ul className="list">
-          {grammar.map((card) => (
-            <li className="list-item" key={card.id}>
-              <span className="word-row">
-                {card.pattern || card.title}
-                <SpeakButton text={card.pattern || card.title} />
-              </span>{' '}
-              – {card.explanation_de}
-              {card.lessonId && lessonTitles[card.lessonId] && (
-                <span className="meta">{lessonTitles[card.lessonId]}</span>
-              )}
-            </li>
-          ))}
-        </ul>
+          <h2>Grammatik ({grammar.length})</h2>
+          {grammar.length === 0 ? (
+            <div className="empty-state">
+              <EmptyBoxIcon />
+              <p>Noch keine Grammatikpunkte vorhanden.</p>
+            </div>
+          ) : (
+            <ul className="list">
+              {grammar.map((card) => (
+                <li className="list-item" key={card.id}>
+                  <span className="word-row">
+                    {card.pattern || card.title}
+                    <SpeakButton text={card.pattern || card.title} />
+                  </span>{' '}
+                  – {card.explanation_de}
+                  {card.lessonId && lessonTitles[card.lessonId] && (
+                    <span className="meta">{lessonTitles[card.lessonId]}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )

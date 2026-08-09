@@ -79,3 +79,22 @@ export function SwapIcon() {
     </svg>
   )
 }
+
+export function EmptyCheckIcon() {
+  return (
+    <svg {...common} width={48} height={48} strokeWidth={1.4}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5l2.5 2.5L16 9.5" />
+    </svg>
+  )
+}
+
+export function EmptyBoxIcon() {
+  return (
+    <svg {...common} width={48} height={48} strokeWidth={1.4}>
+      <path d="M3.5 8.5 12 4l8.5 4.5L12 13z" />
+      <path d="M3.5 8.5V16L12 20.5 20.5 16V8.5" />
+      <path d="M12 13v7.5" />
+    </svg>
+  )
+}

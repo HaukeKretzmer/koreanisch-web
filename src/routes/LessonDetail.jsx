@@ -4,6 +4,8 @@ import { getLesson } from '../data/lessons.js'
 import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import { EmptyBoxIcon } from '../components/icons.jsx'
+import { SkeletonRows, SkeletonBlock } from '../components/Skeleton.jsx'
 
 export default function LessonDetail() {
   const { id } = useParams()
@@ -30,7 +32,14 @@ export default function LessonDetail() {
   }
 
   if (!loaded) {
-    return <p className="loading-text">Lade Lektion…</p>
+    return (
+      <div className="page">
+        <SkeletonBlock height={32} />
+        <div style={{ marginTop: 16 }}>
+          <SkeletonRows count={4} />
+        </div>
+      </div>
+    )
   }
 
   if (!lesson) {
@@ -52,7 +61,10 @@ export default function LessonDetail() {
       </p>
       {lesson.description && <p>{lesson.description}</p>}
       {(lesson.level || lesson.topic) && (
-        <p className="meta">{[lesson.level, lesson.topic].filter(Boolean).join(' · ')}</p>
+        <span className="badge-row">
+          {lesson.level && <span className="badge">{lesson.level}</span>}
+          {lesson.topic && <span className="badge">{lesson.topic}</span>}
+        </span>
       )}
 
       {vocab.length + grammar.length > 0 && (
@@ -68,7 +80,10 @@ export default function LessonDetail() {
 
       <h2>Vokabeln ({vocab.length})</h2>
       {vocab.length === 0 ? (
-        <p>Keine Vokabeln in dieser Lektion.</p>
+        <div className="empty-state">
+          <EmptyBoxIcon />
+          <p>Keine Vokabeln in dieser Lektion.</p>
+        </div>
       ) : (
         <ul className="list">
           {vocab.map((card) => (
@@ -88,7 +103,10 @@ export default function LessonDetail() {
 
       <h2>Grammatik ({grammar.length})</h2>
       {grammar.length === 0 ? (
-        <p>Keine Grammatikpunkte in dieser Lektion.</p>
+        <div className="empty-state">
+          <EmptyBoxIcon />
+          <p>Keine Grammatikpunkte in dieser Lektion.</p>
+        </div>
       ) : (
         <ul className="list">
           {grammar.map((card) => (

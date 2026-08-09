@@ -4,6 +4,7 @@ import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
 import { saveTestResult } from '../data/testResults.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import { SkeletonBlock } from '../components/Skeleton.jsx'
 
 const VOCAB_TARGET = 20
 const GRAMMAR_TARGET = 10
@@ -142,7 +143,7 @@ export default function Test() {
 
   if (phase === 'idle') {
     return (
-      <div className="page">
+      <div className="page section-test">
         <h1>Tagestest</h1>
         <p className="back-link">
           <Link to="/">Zurück zum Dashboard</Link>
@@ -167,7 +168,11 @@ export default function Test() {
   }
 
   if (phase === 'loading') {
-    return <p className="loading-text">Lade Testfragen…</p>
+    return (
+      <div className="page section-test">
+        <SkeletonBlock />
+      </div>
+    )
   }
 
   if (phase === 'summary') {
@@ -175,7 +180,7 @@ export default function Test() {
     const total = results.vocabTotal + results.grammarTotal
     const percent = total > 0 ? Math.round((totalCorrect / total) * 100) : 0
     return (
-      <div className="page">
+      <div className="page section-test">
         <div className="summary">
           <h1>Test abgeschlossen</h1>
           <p className="test-score">{percent}%</p>
@@ -203,75 +208,81 @@ export default function Test() {
   const sectionIndex =
     question.collection === 'vocabulary' ? currentIndex + 1 : currentIndex + 1 - results.vocabTotal
   const sectionTotal = question.collection === 'vocabulary' ? results.vocabTotal : results.grammarTotal
+  const cardAccentStyle =
+    question.collection === 'grammar'
+      ? { '--accent': 'var(--accent-grammar)', '--accent-2': 'var(--accent-grammar-2)' }
+      : undefined
 
   return (
-    <div className="page">
+    <div className="page section-test">
       <h1>Tagestest</h1>
       <p className="review-progress">
         {sectionLabel} {sectionIndex} von {sectionTotal}
       </p>
 
-      <div className="review-card">
-        {question.collection === 'vocabulary' ? (
-          <div className="korean-row">
+      <div style={cardAccentStyle}>
+        <div className="review-card">
+          {question.collection === 'vocabulary' ? (
+            <div className="korean-row">
+              <p className="korean">{question.prompt}</p>
+              <SpeakButton text={question.prompt} />
+            </div>
+          ) : (
             <p className="korean">{question.prompt}</p>
-            <SpeakButton text={question.prompt} />
-          </div>
-        ) : (
-          <p className="korean">{question.prompt}</p>
-        )}
-        {question.secondary && <p className="romanization">{question.secondary}</p>}
-      </div>
-
-      {question.mode === 'typed' ? (
-        <form className="form" onSubmit={handleTypedSubmit}>
-          <div className="field">
-            <label htmlFor="answer">Antwort</label>
-            <input
-              id="answer"
-              value={typedAnswer}
-              onChange={(event) => setTypedAnswer(event.target.value)}
-              disabled={Boolean(feedback)}
-              autoComplete="off"
-            />
-          </div>
-          {!feedback && (
-            <button type="submit" className="btn btn-primary btn-block">
-              Prüfen
-            </button>
           )}
-        </form>
-      ) : (
-        <div className="choice-grid">
-          {question.options.map((option) => {
-            let optionClass = 'choice-option'
-            if (feedback) {
-              if (option === question.answer) optionClass += ' choice-correct'
-              else if (option === feedback.selected) optionClass += ' choice-wrong'
-            }
-            return (
-              <button
-                key={option}
-                type="button"
-                className={optionClass}
-                onClick={() => handleChoiceClick(option)}
-                disabled={Boolean(feedback)}
-              >
-                {option}
-              </button>
-            )
-          })}
+          {question.secondary && <p className="romanization">{question.secondary}</p>}
         </div>
-      )}
 
-      {feedback && (
-        <div className={`feedback ${feedback.correct ? 'feedback-correct' : 'feedback-wrong'}`}>
-          <p>{feedback.correct ? 'Richtig!' : `Falsch – richtig wäre: ${feedback.correctAnswer}`}</p>
-          <button type="button" className="btn btn-primary btn-block" onClick={handleNext}>
-            Weiter
-          </button>
-        </div>
-      )}
+        {question.mode === 'typed' ? (
+          <form className="form" onSubmit={handleTypedSubmit}>
+            <div className="field">
+              <label htmlFor="answer">Antwort</label>
+              <input
+                id="answer"
+                value={typedAnswer}
+                onChange={(event) => setTypedAnswer(event.target.value)}
+                disabled={Boolean(feedback)}
+                autoComplete="off"
+              />
+            </div>
+            {!feedback && (
+              <button type="submit" className="btn btn-primary btn-block">
+                Prüfen
+              </button>
+            )}
+          </form>
+        ) : (
+          <div className="choice-grid">
+            {question.options.map((option) => {
+              let optionClass = 'choice-option'
+              if (feedback) {
+                if (option === question.answer) optionClass += ' choice-correct'
+                else if (option === feedback.selected) optionClass += ' choice-wrong'
+              }
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  className={optionClass}
+                  onClick={() => handleChoiceClick(option)}
+                  disabled={Boolean(feedback)}
+                >
+                  {option}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {feedback && (
+          <div className={`feedback ${feedback.correct ? 'feedback-correct' : 'feedback-wrong'}`}>
+            <p>{feedback.correct ? 'Richtig!' : `Falsch – richtig wäre: ${feedback.correctAnswer}`}</p>
+            <button type="button" className="btn btn-primary btn-block" onClick={handleNext}>
+              Weiter
+            </button>
+          </div>
+        )}
+      </div>
 
       {error && (
         <p className="error-text" role="alert">
