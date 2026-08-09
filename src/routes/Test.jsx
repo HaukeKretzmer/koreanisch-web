@@ -48,15 +48,16 @@ function buildGrammarQuestion(card, grammarCards, allClozeAnswers) {
     }
   }
 
+  // Die abstrakte Musternotation (z.B. "V-아서/어서") lässt sich nicht sinnvoll eintippen -
+  // solche Fragen sind daher immer Multiple-Choice, nie Texteingabe.
   const answer = card.pattern || card.title
-  const options = Math.random() < 0.5
-    ? buildChoiceOptions(answer, grammarCards, (c) => c.pattern || c.title)
-    : null
+  const options = buildChoiceOptions(answer, grammarCards, (c) => c.pattern || c.title)
+  if (!options) return null
   return {
     collection: 'grammar',
     card,
     kind: 'pattern',
-    mode: options ? 'choice' : 'typed',
+    mode: 'choice',
     instruction: 'Welches Grammatikmuster wird hier beschrieben?',
     prompt: card.explanation_de,
     secondary: null,
@@ -89,8 +90,9 @@ function buildQuestions(vocabCards, grammarCards) {
     Array.isArray(card.cloze) ? card.cloze.map((item) => item.answer) : [],
   )
   const grammarQuestions = shuffle(grammarCards)
-    .slice(0, GRAMMAR_TARGET)
     .map((card) => buildGrammarQuestion(card, grammarCards, allClozeAnswers))
+    .filter(Boolean)
+    .slice(0, GRAMMAR_TARGET)
 
   return { vocabQuestions, grammarQuestions }
 }
