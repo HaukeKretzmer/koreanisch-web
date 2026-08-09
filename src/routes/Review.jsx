@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getDueCards } from '../data/dueCards.js'
+import { getLessonCards } from '../data/lessonCards.js'
+import { getLesson } from '../data/lessons.js'
 import { updateSrsFields } from '../data/cards.js'
 import { sm2Update } from '../srs/sm2.js'
 
@@ -49,17 +51,31 @@ function CardBack({ card }) {
 }
 
 export default function Review() {
+  const { lessonId } = useParams()
+  const backLink = lessonId ? `/lessons/${lessonId}` : '/'
+  const backLabel = lessonId ? 'Zurück zur Lektion' : 'Zurück zum Dashboard'
+
   const [cards, setCards] = useState(null)
+  const [lessonTitle, setLessonTitle] = useState(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [reviewedCount, setReviewedCount] = useState(0)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    getDueCards()
-      .then(setCards)
-      .catch((err) => setError(err.message))
-  }, [])
+    if (lessonId) {
+      Promise.all([getLessonCards(lessonId), getLesson(lessonId)])
+        .then(([lessonCards, lesson]) => {
+          setCards(lessonCards)
+          setLessonTitle(lesson?.title ?? null)
+        })
+        .catch((err) => setError(err.message))
+    } else {
+      getDueCards()
+        .then(setCards)
+        .catch((err) => setError(err.message))
+    }
+  }, [lessonId])
 
   async function handleRate(quality) {
     const currentCard = cards[currentIndex]
@@ -79,16 +95,16 @@ export default function Review() {
   }
 
   if (cards === null) {
-    return <p className="loading-text">Lade fällige Karten…</p>
+    return <p className="loading-text">Lade Karten…</p>
   }
 
   if (cards.length === 0) {
     return (
       <div className="page">
         <div className="summary">
-          <p>Keine fälligen Karten.</p>
+          <p>{lessonId ? 'Diese Lektion hat noch keine Karten.' : 'Keine fälligen Karten.'}</p>
           <p className="back-link">
-            <Link to="/">Zurück zum Dashboard</Link>
+            <Link to={backLink}>{backLabel}</Link>
           </p>
         </div>
       </div>
@@ -102,7 +118,7 @@ export default function Review() {
           <h1>Runde abgeschlossen</h1>
           <p>Du hast {reviewedCount} Karte{reviewedCount === 1 ? '' : 'n'} wiederholt.</p>
           <p className="back-link">
-            <Link to="/">Zurück zum Dashboard</Link>
+            <Link to={backLink}>{backLabel}</Link>
           </p>
         </div>
       </div>
@@ -113,7 +129,7 @@ export default function Review() {
 
   return (
     <div className="page">
-      <h1>Review</h1>
+      <h1>{lessonId ? `Review: ${lessonTitle ?? ''}` : 'Review'}</h1>
       <p className="review-progress">
         Karte {currentIndex + 1} von {cards.length}
       </p>

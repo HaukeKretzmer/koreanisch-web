@@ -34,6 +34,14 @@ function App() {
             }
           />
           <Route
+            path="/review/lesson/:lessonId"
+            element={
+              <ProtectedRoute>
+                <Review />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/lessons"
             element={
               <ProtectedRoute>

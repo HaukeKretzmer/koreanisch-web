@@ -54,6 +54,14 @@ export default function LessonDetail() {
         <p className="meta">{[lesson.level, lesson.topic].filter(Boolean).join(' · ')}</p>
       )}
 
+      {vocab.length + grammar.length > 0 && (
+        <p>
+          <Link className="btn btn-primary" to={`/review/lesson/${lesson.id}`}>
+            Diese Lektion lernen
+          </Link>
+        </p>
+      )}
+
       <h2>Vokabeln ({vocab.length})</h2>
       {vocab.length === 0 ? (
         <p>Keine Vokabeln in dieser Lektion.</p>

@@ -2,9 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab } from '../data/vocab.js'
 import { getAllGrammar } from '../data/grammar.js'
-import { updateSrsFields } from '../data/cards.js'
 import { saveTestResult } from '../data/testResults.js'
-import { sm2Update } from '../srs/sm2.js'
 
 const VOCAB_TARGET = 20
 const GRAMMAR_TARGET = 10
@@ -102,7 +100,7 @@ export default function Test() {
     }
   }
 
-  async function grade(isCorrect, selected) {
+  function grade(isCorrect, selected) {
     const question = questions[currentIndex]
     setFeedback({ correct: isCorrect, correctAnswer: question.answer, selected })
 
@@ -110,14 +108,6 @@ export default function Test() {
       const key = question.collection === 'vocabulary' ? 'vocabCorrect' : 'grammarCorrect'
       return isCorrect ? { ...prev, [key]: prev[key] + 1 } : prev
     })
-
-    try {
-      const quality = isCorrect ? 4 : 0
-      const updatedSrs = sm2Update(question.card, quality)
-      await updateSrsFields(question.collection, question.card.id, updatedSrs)
-    } catch (err) {
-      setError(err.message)
-    }
   }
 
   function handleTypedSubmit(event) {
@@ -159,8 +149,8 @@ export default function Test() {
         <div className="summary">
           <p>
             Bis zu {VOCAB_TARGET} Vokabeln und {GRAMMAR_TARGET} Sätze (Grammatikpunkte), gemischt aus
-            Texteingabe und Multiple-Choice. Die Bewertung fließt wie im Review in den
-            Lernfortschritt ein.
+            Texteingabe und Multiple-Choice. Reines Übungsquiz – dein Ergebnis wird gespeichert, aber
+            der SM-2-Lernfortschritt deiner Karten bleibt unverändert.
           </p>
           {error && (
             <p className="error-text" role="alert">
