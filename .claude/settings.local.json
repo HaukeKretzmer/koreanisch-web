@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /c/Users/Hauke/AppData/Local/Temp/claude/C--Users-Hauke-IdeaProjects-Koreanisch/f591b0c4-1838-42b0-b997-d8d99c7dfc65/scratchpad)",
+      "Read(//c/Users/Hauke/AppData/Local/Temp/claude/C--Users-Hauke-IdeaProjects-Koreanisch/f591b0c4-1838-42b0-b997-d8d99c7dfc65/**)",
+      "Bash(rm -rf vite-scaffold)",
+      "Bash(npm create *)"
+    ]
+  }
+}
