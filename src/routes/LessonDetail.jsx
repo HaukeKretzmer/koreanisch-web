@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getLesson } from '../data/lessons.js'
 import { getAllVocab } from '../data/vocab.js'
-import { getAllGrammar } from '../data/grammar.js'
 import SpeakButton from '../components/SpeakButton.jsx'
 import { EmptyBoxIcon } from '../components/icons.jsx'
 import { SkeletonRows, SkeletonBlock } from '../components/Skeleton.jsx'
@@ -11,17 +10,15 @@ export default function LessonDetail() {
   const { id } = useParams()
   const [lesson, setLesson] = useState(null)
   const [vocab, setVocab] = useState([])
-  const [grammar, setGrammar] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     setLoaded(false)
-    Promise.all([getLesson(id), getAllVocab(), getAllGrammar()])
-      .then(([lessonResult, allVocab, allGrammar]) => {
+    Promise.all([getLesson(id), getAllVocab()])
+      .then(([lessonResult, allVocab]) => {
         setLesson(lessonResult)
         setVocab(allVocab.filter((card) => card.lessonId === id))
-        setGrammar(allGrammar.filter((card) => card.lessonId === id))
         setLoaded(true)
       })
       .catch((err) => setError(err.message))
@@ -67,7 +64,7 @@ export default function LessonDetail() {
         </span>
       )}
 
-      {vocab.length + grammar.length > 0 && (
+      {vocab.length > 0 && (
         <div className="direction-toggle">
           <Link className="btn btn-primary" to={`/review/lesson/${lesson.id}`}>
             Diese Lektion lernen
@@ -96,26 +93,6 @@ export default function LessonDetail() {
                 <SpeakButton text={card.korean} />
               </span>
               {card.romanization && <> ({card.romanization})</>} – {card.translation_de}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2>Grammatik ({grammar.length})</h2>
-      {grammar.length === 0 ? (
-        <div className="empty-state">
-          <EmptyBoxIcon />
-          <p>Keine Grammatikpunkte in dieser Lektion.</p>
-        </div>
-      ) : (
-        <ul className="list">
-          {grammar.map((card) => (
-            <li className="list-item" key={card.id}>
-              <span className="word-row">
-                {card.pattern || card.title}
-                <SpeakButton text={card.pattern || card.title} />
-              </span>{' '}
-              – {card.explanation_de}
             </li>
           ))}
         </ul>

@@ -18,16 +18,8 @@ const RATING_BUTTONS = [
   { label: 'Leicht', quality: 5, className: 'rating-easy' },
 ]
 
-function koreanOf(card) {
-  return card.collection === 'grammar' ? card.pattern || card.title : card.korean
-}
-
-function germanOf(card) {
-  return card.collection === 'grammar' ? card.explanation_de : card.translation_de
-}
-
 function CardFrontContent({ card, isProduction }) {
-  const front = isProduction ? germanOf(card) : koreanOf(card)
+  const front = isProduction ? card.translation_de : card.korean
 
   return (
     <>
@@ -39,49 +31,33 @@ function CardFrontContent({ card, isProduction }) {
           <SpeakButton text={front} />
         </div>
       )}
-      {!isProduction && card.collection === 'vocabulary' && card.romanization && (
-        <p className="romanization">{card.romanization}</p>
-      )}
+      {!isProduction && card.romanization && <p className="romanization">{card.romanization}</p>}
       <p className="hint">(antippen zum Aufdecken)</p>
     </>
   )
 }
 
 function CardBackContent({ card, isProduction }) {
-  const isGrammar = card.collection === 'grammar'
-  const koreanText = koreanOf(card)
-  const germanText = germanOf(card)
-  const examples = isGrammar ? card.examples ?? [] : []
-
   return (
     <>
       {isProduction ? (
         <div className="korean-row">
-          <p className="translation">{koreanText}</p>
-          <SpeakButton text={koreanText} />
+          <p className="translation">{card.korean}</p>
+          <SpeakButton text={card.korean} />
         </div>
       ) : (
-        <p className="translation">{germanText}</p>
+        <p className="translation">{card.translation_de}</p>
       )}
-      {!isProduction && !isGrammar && card.romanization && (
-        <p className="romanization">{card.romanization}</p>
-      )}
+      {!isProduction && card.romanization && <p className="romanization">{card.romanization}</p>}
 
-      {isGrammar
-        ? examples.map((example, index) => (
-            <p className="example" key={index}>
-              {example.korean} – {example.translation_de}
-              <SpeakButton text={example.korean} />
-            </p>
-          ))
-        : (card.example_sentence_kr || card.example_sentence_de) && (
-            <p className="example">
-              {card.example_sentence_kr}
-              {card.example_sentence_kr && <SpeakButton text={card.example_sentence_kr} />}
-              {card.example_sentence_kr && card.example_sentence_de && ' – '}
-              {card.example_sentence_de}
-            </p>
-          )}
+      {(card.example_sentence_kr || card.example_sentence_de) && (
+        <p className="example">
+          {card.example_sentence_kr}
+          {card.example_sentence_kr && <SpeakButton text={card.example_sentence_kr} />}
+          {card.example_sentence_kr && card.example_sentence_de && ' – '}
+          {card.example_sentence_de}
+        </p>
+      )}
     </>
   )
 }
@@ -181,10 +157,6 @@ export default function Review() {
 
   const currentCard = cards[currentIndex]
   const heading = lessonId ? `Review: ${lessonTitle ?? ''}` : 'Review'
-  const cardAccentStyle =
-    currentCard.collection === 'grammar'
-      ? { '--accent': 'var(--accent-grammar)', '--accent-2': 'var(--accent-grammar-2)' }
-      : undefined
 
   return (
     <div className="page">
@@ -196,7 +168,7 @@ export default function Review() {
         Karte {currentIndex + 1} von {cards.length}
       </p>
 
-      <div className="flip-container" style={cardAccentStyle}>
+      <div className="flip-container">
         <div className={`flip-inner${revealed ? ' flipped' : ''}`}>
           <div
             className="review-card flip-front"
@@ -219,7 +191,7 @@ export default function Review() {
       </div>
 
       {revealed && (
-        <div className="rating-buttons" style={cardAccentStyle}>
+        <div className="rating-buttons">
           {RATING_BUTTONS.map(({ label, quality, className }) => (
             <button
               key={label}

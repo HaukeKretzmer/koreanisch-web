@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab, upsertVocabContent } from '../data/vocab.js'
-import { getAllGrammar, upsertGrammarContent } from '../data/grammar.js'
 import { upsertLesson } from '../data/lessons.js'
 
 function validate(data) {
@@ -15,18 +14,12 @@ function validate(data) {
     return 'Lektion braucht mindestens "id" und "title".'
   }
   const vocabulary = data.vocabulary ?? []
-  const grammar = data.grammar ?? []
-  if (!Array.isArray(vocabulary) || !Array.isArray(grammar)) {
-    return '"vocabulary" und "grammar" müssen Arrays sein.'
+  if (!Array.isArray(vocabulary)) {
+    return '"vocabulary" muss ein Array sein.'
   }
   for (const item of vocabulary) {
     if (!item.id || !item.korean || !item.translation_de) {
       return 'Jede Vokabel braucht mindestens "id", "korean" und "translation_de".'
-    }
-  }
-  for (const item of grammar) {
-    if (!item.id || !item.explanation_de) {
-      return 'Jeder Grammatikpunkt braucht mindestens "id" und "explanation_de".'
     }
   }
   return ''
@@ -64,18 +57,14 @@ export default function Import() {
     }
 
     try {
-      const [existingVocab, existingGrammar] = await Promise.all([getAllVocab(), getAllGrammar()])
+      const existingVocab = await getAllVocab()
       const existingVocabIds = new Set(existingVocab.map((card) => card.id))
-      const existingGrammarIds = new Set(existingGrammar.map((card) => card.id))
       const vocabulary = parsed.vocabulary ?? []
-      const grammar = parsed.grammar ?? []
 
       setData(parsed)
       setPreview({
         newVocab: vocabulary.filter((item) => !existingVocabIds.has(item.id)).length,
         updatedVocab: vocabulary.filter((item) => existingVocabIds.has(item.id)).length,
-        newGrammar: grammar.filter((item) => !existingGrammarIds.has(item.id)).length,
-        updatedGrammar: grammar.filter((item) => existingGrammarIds.has(item.id)).length,
       })
     } catch (err) {
       setError(err.message)
@@ -86,17 +75,13 @@ export default function Import() {
     setImporting(true)
     setError('')
     try {
-      const { lesson, vocabulary = [], grammar = [] } = data
+      const { lesson, vocabulary = [] } = data
       const { id: lessonId, ...lessonContent } = lesson
       await upsertLesson(lessonId, lessonContent)
 
       for (const item of vocabulary) {
         const { id, ...content } = item
         await upsertVocabContent(id, { ...content, lessonId })
-      }
-      for (const item of grammar) {
-        const { id, ...content } = item
-        await upsertGrammarContent(id, { ...content, lessonId })
       }
 
       setDone(true)
@@ -124,7 +109,6 @@ export default function Import() {
         <div>
           <h2>Vorschau: {data.lesson.title}</h2>
           <p>Vokabeln: {preview.newVocab} neu, {preview.updatedVocab} aktualisiert</p>
-          <p>Grammatik: {preview.newGrammar} neu, {preview.updatedGrammar} aktualisiert</p>
           <button type="button" className="btn btn-primary btn-block" onClick={handleImport} disabled={importing}>
             {importing ? 'Importiere…' : 'Importieren'}
           </button>

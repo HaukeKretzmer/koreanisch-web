@@ -11,7 +11,6 @@ import VocabForm from './routes/VocabForm.jsx'
 import Stats from './routes/Stats.jsx'
 import Test from './routes/Test.jsx'
 import Cards from './routes/Cards.jsx'
-import Conjugate from './routes/Conjugate.jsx'
 
 function App() {
   return (
@@ -104,14 +103,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Cards />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/conjugate"
-            element={
-              <ProtectedRoute>
-                <Conjugate />
               </ProtectedRoute>
             }
           />

@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab } from '../data/vocab.js'
-import { getAllGrammar } from '../data/grammar.js'
 import { saveTestResult } from '../data/testResults.js'
 import SpeakButton from '../components/SpeakButton.jsx'
 import { SkeletonBlock } from '../components/Skeleton.jsx'
 
 const VOCAB_TARGET = 20
-const GRAMMAR_TARGET = 10
 
 function shuffle(array) {
   const copy = [...array]
@@ -26,48 +24,8 @@ function buildChoiceOptions(correctAnswer, pool, getValue) {
   return shuffle([correctAnswer, ...distractors])
 }
 
-function buildGrammarQuestion(card, grammarCards, allClozeAnswers) {
-  const clozeOptions = Array.isArray(card.cloze) ? card.cloze : []
-  const useCloze = clozeOptions.length > 0 && Math.random() < 0.5
-
-  if (useCloze) {
-    const clozeItem = clozeOptions[Math.floor(Math.random() * clozeOptions.length)]
-    const options = Math.random() < 0.5
-      ? buildChoiceOptions(clozeItem.answer, allClozeAnswers, (value) => value)
-      : null
-    return {
-      collection: 'grammar',
-      card,
-      kind: 'cloze',
-      mode: options ? 'choice' : 'typed',
-      instruction: 'Was fehlt in der Lücke?',
-      prompt: clozeItem.sentence,
-      secondary: clozeItem.translation_de,
-      answer: clozeItem.answer,
-      options,
-    }
-  }
-
-  // Die abstrakte Musternotation (z.B. "V-아서/어서") lässt sich nicht sinnvoll eintippen -
-  // solche Fragen sind daher immer Multiple-Choice, nie Texteingabe.
-  const answer = card.pattern || card.title
-  const options = buildChoiceOptions(answer, grammarCards, (c) => c.pattern || c.title)
-  if (!options) return null
-  return {
-    collection: 'grammar',
-    card,
-    kind: 'pattern',
-    mode: 'choice',
-    instruction: 'Welches Grammatikmuster wird hier beschrieben?',
-    prompt: card.explanation_de,
-    secondary: null,
-    answer,
-    options,
-  }
-}
-
-function buildQuestions(vocabCards, grammarCards) {
-  const vocabQuestions = shuffle(vocabCards)
+function buildQuestions(vocabCards) {
+  return shuffle(vocabCards)
     .slice(0, VOCAB_TARGET)
     .map((card) => {
       const answer = card.translation_de
@@ -75,7 +33,6 @@ function buildQuestions(vocabCards, grammarCards) {
         ? buildChoiceOptions(answer, vocabCards, (c) => c.translation_de)
         : null
       return {
-        collection: 'vocabulary',
         card,
         mode: options ? 'choice' : 'typed',
         instruction: 'Wie heißt das auf Deutsch?',
@@ -85,16 +42,6 @@ function buildQuestions(vocabCards, grammarCards) {
         options,
       }
     })
-
-  const allClozeAnswers = grammarCards.flatMap((card) =>
-    Array.isArray(card.cloze) ? card.cloze.map((item) => item.answer) : [],
-  )
-  const grammarQuestions = shuffle(grammarCards)
-    .map((card) => buildGrammarQuestion(card, grammarCards, allClozeAnswers))
-    .filter(Boolean)
-    .slice(0, GRAMMAR_TARGET)
-
-  return { vocabQuestions, grammarQuestions }
 }
 
 function normalize(text) {
@@ -155,17 +102,6 @@ function isTypedAnswerCorrect(typedAnswer, correctAnswer) {
   return getAcceptableAnswers(correctAnswer).has(normalize(typedAnswer))
 }
 
-function ClozeSentence({ sentence }) {
-  const [before, after] = sentence.split('___')
-  return (
-    <p className="korean">
-      {before}
-      <span className="cloze-blank">___</span>
-      {after}
-    </p>
-  )
-}
-
 export default function Test() {
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState('')
@@ -173,25 +109,20 @@ export default function Test() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [typedAnswer, setTypedAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
-  const [results, setResults] = useState({ vocabCorrect: 0, vocabTotal: 0, grammarCorrect: 0, grammarTotal: 0 })
+  const [results, setResults] = useState({ correct: 0, total: 0 })
 
   async function startTest() {
     setPhase('loading')
     setError('')
     try {
-      const [vocab, grammar] = await Promise.all([getAllVocab(), getAllGrammar()])
-      const { vocabQuestions, grammarQuestions } = buildQuestions(vocab, grammar)
-      setQuestions([...vocabQuestions, ...grammarQuestions])
+      const vocab = await getAllVocab()
+      const vocabQuestions = buildQuestions(vocab)
+      setQuestions(vocabQuestions)
       setCurrentIndex(0)
-      setResults({
-        vocabCorrect: 0,
-        vocabTotal: vocabQuestions.length,
-        grammarCorrect: 0,
-        grammarTotal: grammarQuestions.length,
-      })
+      setResults({ correct: 0, total: vocabQuestions.length })
       setFeedback(null)
       setTypedAnswer('')
-      setPhase(vocabQuestions.length + grammarQuestions.length > 0 ? 'running' : 'summary')
+      setPhase(vocabQuestions.length > 0 ? 'running' : 'summary')
     } catch (err) {
       setError(err.message)
       setPhase('idle')
@@ -201,11 +132,9 @@ export default function Test() {
   function grade(isCorrect, selected) {
     const question = questions[currentIndex]
     setFeedback({ correct: isCorrect, correctAnswer: question.answer, selected })
-
-    setResults((prev) => {
-      const key = question.collection === 'vocabulary' ? 'vocabCorrect' : 'grammarCorrect'
-      return isCorrect ? { ...prev, [key]: prev[key] + 1 } : prev
-    })
+    if (isCorrect) {
+      setResults((prev) => ({ ...prev, correct: prev.correct + 1 }))
+    }
   }
 
   function handleTypedSubmit(event) {
@@ -246,9 +175,9 @@ export default function Test() {
         </p>
         <div className="summary">
           <p>
-            Bis zu {VOCAB_TARGET} Vokabeln und {GRAMMAR_TARGET} Sätze (Grammatikpunkte), gemischt aus
-            Texteingabe und Multiple-Choice. Reines Übungsquiz – dein Ergebnis wird gespeichert, aber
-            der SM-2-Lernfortschritt deiner Karten bleibt unverändert.
+            Bis zu {VOCAB_TARGET} Vokabeln, gemischt aus Texteingabe und Multiple-Choice. Reines
+            Übungsquiz – dein Ergebnis wird gespeichert, aber der SM-2-Lernfortschritt deiner
+            Karten bleibt unverändert.
           </p>
           {error && (
             <p className="error-text" role="alert">
@@ -272,19 +201,14 @@ export default function Test() {
   }
 
   if (phase === 'summary') {
-    const totalCorrect = results.vocabCorrect + results.grammarCorrect
-    const total = results.vocabTotal + results.grammarTotal
-    const percent = total > 0 ? Math.round((totalCorrect / total) * 100) : 0
+    const percent = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0
     return (
       <div className="page section-test">
         <div className="summary">
           <h1>Test abgeschlossen</h1>
           <p className="test-score">{percent}%</p>
           <p>
-            Vokabeln: {results.vocabCorrect} / {results.vocabTotal}
-          </p>
-          <p>
-            Sätze: {results.grammarCorrect} / {results.grammarTotal}
+            Vokabeln: {results.correct} / {results.total}
           </p>
           {error && (
             <p className="error-text" role="alert">
@@ -300,35 +224,21 @@ export default function Test() {
   }
 
   const question = questions[currentIndex]
-  const sectionLabel = question.collection === 'vocabulary' ? 'Vokabel' : 'Satz'
-  const sectionIndex =
-    question.collection === 'vocabulary' ? currentIndex + 1 : currentIndex + 1 - results.vocabTotal
-  const sectionTotal = question.collection === 'vocabulary' ? results.vocabTotal : results.grammarTotal
-  const cardAccentStyle =
-    question.collection === 'grammar'
-      ? { '--accent': 'var(--accent-grammar)', '--accent-2': 'var(--accent-grammar-2)' }
-      : undefined
 
   return (
     <div className="page section-test">
       <h1>Tagestest</h1>
       <p className="review-progress">
-        {sectionLabel} {sectionIndex} von {sectionTotal}
+        Vokabel {currentIndex + 1} von {results.total}
       </p>
 
-      <div style={cardAccentStyle}>
+      <div>
         {question.instruction && <p className="test-instruction">{question.instruction}</p>}
         <div className="review-card">
-          {question.collection === 'vocabulary' ? (
-            <div className="korean-row">
-              <p className="korean">{question.prompt}</p>
-              <SpeakButton text={question.prompt} />
-            </div>
-          ) : question.kind === 'cloze' ? (
-            <ClozeSentence sentence={question.prompt} />
-          ) : (
+          <div className="korean-row">
             <p className="korean">{question.prompt}</p>
-          )}
+            <SpeakButton text={question.prompt} />
+          </div>
           {question.secondary && <p className="romanization">{question.secondary}</p>}
         </div>
 

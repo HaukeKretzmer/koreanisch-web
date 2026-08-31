@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab } from '../data/vocab.js'
-import { getAllGrammar } from '../data/grammar.js'
 import { getAllLessons } from '../data/lessons.js'
 import { getDueCards } from '../data/dueCards.js'
 import { getRecentTestResults } from '../data/testResults.js'
@@ -71,28 +70,27 @@ export default function Stats() {
   }, [])
 
   useEffect(() => {
-    Promise.all([getAllVocab(), getAllGrammar(), getAllLessons(), getDueCards()])
-      .then(([vocab, grammar, lessons, due]) => {
-        const cards = [...vocab, ...grammar]
+    Promise.all([getAllVocab(), getAllLessons(), getDueCards()])
+      .then(([vocab, lessons, due]) => {
         const now = new Date()
         const todayStart = startOfDay(now)
         const weekStart = startOfRollingWeek(now)
 
-        const reviewedToday = cards.filter((card) => {
+        const reviewedToday = vocab.filter((card) => {
           const reviewedAt = toDate(card.lastReviewedAt)
           return reviewedAt && reviewedAt >= todayStart
         }).length
-        const reviewedThisWeek = cards.filter((card) => {
+        const reviewedThisWeek = vocab.filter((card) => {
           const reviewedAt = toDate(card.lastReviewedAt)
           return reviewedAt && reviewedAt >= weekStart
         }).length
 
         const lessonTitles = Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson.title]))
-        const byLesson = groupCount(cards, 'lessonId')
-        const byLevel = groupCount(cards, 'level')
+        const byLesson = groupCount(vocab, 'lessonId')
+        const byLevel = groupCount(vocab, 'level')
 
         setStats({
-          total: cards.length,
+          total: vocab.length,
           due: due.length,
           reviewedToday,
           reviewedThisWeek,
@@ -168,9 +166,7 @@ export default function Stats() {
       ) : (
         <div className="bar-chart">
           {testHistory.map((result) => {
-            const total = result.vocabTotal + result.grammarTotal
-            const correct = result.vocabCorrect + result.grammarCorrect
-            const percent = total > 0 ? Math.round((correct / total) * 100) : 0
+            const percent = result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0
             const date = result.createdAt?.toDate ? result.createdAt.toDate() : null
             return (
               <div className="bar-row" key={result.id}>
