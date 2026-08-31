@@ -10,6 +10,7 @@ import Import from './routes/Import.jsx'
 import VocabForm from './routes/VocabForm.jsx'
 import Stats from './routes/Stats.jsx'
 import Test from './routes/Test.jsx'
+import Endless from './routes/Endless.jsx'
 import Cards from './routes/Cards.jsx'
 
 function App() {
@@ -95,6 +96,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Test />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/endless"
+            element={
+              <ProtectedRoute>
+                <Endless />
               </ProtectedRoute>
             }
           />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab } from '../data/vocab.js'
 import { saveTestResult } from '../data/testResults.js'
@@ -6,98 +6,109 @@ import { shuffle, buildVocabQuestion, isTypedAnswerCorrect } from '../quiz/vocab
 import SpeakButton from '../components/SpeakButton.jsx'
 import { SkeletonBlock } from '../components/Skeleton.jsx'
 
-const VOCAB_TARGET = 20
-
-function buildQuestions(vocabCards) {
-  return shuffle(vocabCards)
-    .slice(0, VOCAB_TARGET)
-    .map((card) => buildVocabQuestion(card, vocabCards))
-}
-
-export default function Test() {
+export default function Endless() {
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState('')
-  const [questions, setQuestions] = useState([])
+  const [allVocab, setAllVocab] = useState([])
+  const [queue, setQueue] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [typedAnswer, setTypedAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
   const [results, setResults] = useState({ correct: 0, total: 0 })
 
-  async function startTest() {
+  // Einmal pro Frage berechnet (nicht bei jedem Tastenanschlag neu), sonst würde sich Modus/
+  // Multiple-Choice-Optionen mitten in der Frage durch den enthaltenen Zufall verändern.
+  const question = useMemo(
+    () => (queue.length > 0 ? buildVocabQuestion(queue[currentIndex], allVocab) : null),
+    [queue, currentIndex, allVocab],
+  )
+
+  async function startPractice() {
     setPhase('loading')
     setError('')
     try {
       const vocab = await getAllVocab()
-      const vocabQuestions = buildQuestions(vocab)
-      setQuestions(vocabQuestions)
+      if (vocab.length === 0) {
+        setError('Noch keine Vokabeln vorhanden.')
+        setPhase('idle')
+        return
+      }
+      setAllVocab(vocab)
+      setQueue(shuffle(vocab))
       setCurrentIndex(0)
-      setResults({ correct: 0, total: vocabQuestions.length })
+      setResults({ correct: 0, total: 0 })
       setFeedback(null)
       setTypedAnswer('')
-      setPhase(vocabQuestions.length > 0 ? 'running' : 'summary')
+      setPhase('running')
     } catch (err) {
       setError(err.message)
       setPhase('idle')
     }
   }
 
-  function grade(isCorrect, selected) {
-    const question = questions[currentIndex]
-    setFeedback({ correct: isCorrect, correctAnswer: question.answer, selected })
-    if (isCorrect) {
-      setResults((prev) => ({ ...prev, correct: prev.correct + 1 }))
-    }
+  function grade(isCorrect, selected, answer) {
+    setFeedback({ correct: isCorrect, correctAnswer: answer, selected })
+    setResults((prev) => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }))
   }
 
   function handleTypedSubmit(event) {
     event.preventDefault()
     if (feedback) return
-    const question = questions[currentIndex]
-    grade(isTypedAnswerCorrect(typedAnswer, question.answer))
+    grade(isTypedAnswerCorrect(typedAnswer, question.answer), undefined, question.answer)
   }
 
-  function handleChoiceClick(option) {
+  function handleChoiceClick(question, option) {
     if (feedback) return
-    const question = questions[currentIndex]
-    grade(option === question.answer, option)
+    grade(option === question.answer, option, question.answer)
   }
 
-  async function handleNext() {
-    const nextIndex = currentIndex + 1
+  function handleNext() {
     setFeedback(null)
     setTypedAnswer('')
-    if (nextIndex >= questions.length) {
+    const nextIndex = currentIndex + 1
+    if (nextIndex >= queue.length) {
+      setQueue(shuffle(allVocab))
+      setCurrentIndex(0)
+    } else {
+      setCurrentIndex(nextIndex)
+    }
+  }
+
+  async function handleFinish() {
+    if (results.total > 0) {
       try {
         await saveTestResult(results)
       } catch (err) {
         setError(err.message)
       }
-      setPhase('summary')
-      return
     }
-    setCurrentIndex(nextIndex)
+    setPhase('summary')
   }
 
   if (phase === 'idle') {
     return (
       <div className="page section-test">
-        <h1>Tagestest</h1>
+        <h1>Dauerlernen</h1>
         <p className="back-link">
           <Link to="/">Zurück zum Dashboard</Link>
         </p>
         <div className="summary">
           <p>
-            Bis zu {VOCAB_TARGET} Vokabeln, gemischt aus Texteingabe und Multiple-Choice. Reines
-            Übungsquiz – dein Ergebnis wird gespeichert, aber der SM-2-Lernfortschritt deiner
-            Karten bleibt unverändert.
+            Alle Vokabeln, immer wieder neu gemischt, ohne Ende – gemischt aus Texteingabe und
+            Multiple-Choice, genau wie beim Tagestest. Läuft weiter bis du auf "Beenden" tippst;
+            dein Ergebnis wird dann gespeichert, der SM-2-Lernfortschritt deiner Karten bleibt
+            unverändert.
           </p>
           {error && (
             <p className="error-text" role="alert">
               {error}
             </p>
           )}
-          <button type="button" className="btn btn-primary" onClick={startTest}>
-            Test starten
+          <button type="button" className="btn btn-primary" onClick={startPractice}>
+            Dauerlernen starten
           </button>
         </div>
       </div>
@@ -117,7 +128,7 @@ export default function Test() {
     return (
       <div className="page section-test">
         <div className="summary">
-          <h1>Test abgeschlossen</h1>
+          <h1>Runde beendet</h1>
           <p className="test-score">{percent}%</p>
           <p>
             Vokabeln: {results.correct} / {results.total}
@@ -135,14 +146,17 @@ export default function Test() {
     )
   }
 
-  const question = questions[currentIndex]
-
   return (
     <div className="page section-test">
-      <h1>Tagestest</h1>
-      <p className="review-progress">
-        Vokabel {currentIndex + 1} von {results.total}
-      </p>
+      <h1>Dauerlernen</h1>
+      <div className="direction-toggle">
+        <p className="review-progress">
+          Vokabel {results.total + 1} · {results.correct} richtig
+        </p>
+        <button type="button" className="btn btn-ghost" onClick={handleFinish}>
+          Beenden
+        </button>
+      </div>
 
       <div>
         {question.instruction && <p className="test-instruction">{question.instruction}</p>}
@@ -185,7 +199,7 @@ export default function Test() {
                   key={option}
                   type="button"
                   className={optionClass}
-                  onClick={() => handleChoiceClick(option)}
+                  onClick={() => handleChoiceClick(question, option)}
                   disabled={Boolean(feedback)}
                 >
                   {option}

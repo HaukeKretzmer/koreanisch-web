@@ -80,6 +80,14 @@ export function SwapIcon() {
   )
 }
 
+export function InfinityIcon() {
+  return (
+    <svg {...common}>
+      <path d="M7 9a4 4 0 1 0 0 8 4 6 0 0 0 5-5 4 6 0 0 1 5-5 4 4 0 1 1 0 8 4 6 0 0 1-5-5 4 6 0 0 0-5-5z" />
+    </svg>
+  )
+}
+
 export function EmptyCheckIcon() {
   return (
     <svg {...common} width={48} height={48} strokeWidth={1.4}>
