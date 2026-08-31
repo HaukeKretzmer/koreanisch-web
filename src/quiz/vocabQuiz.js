@@ -18,19 +18,33 @@ function buildChoiceOptions(correctAnswer, pool, getValue) {
   return shuffle([correctAnswer, ...distractors])
 }
 
-export function buildVocabQuestion(card, pool) {
-  const answer = card.translation_de
-  const options = Math.random() < 0.5
-    ? buildChoiceOptions(answer, pool, (c) => c.translation_de)
-    : null
+// direction 'kr-en' (Standard): Koreanisch wird angezeigt, Übersetzung ist die Antwort.
+// direction 'en-kr': Übersetzung wird angezeigt, Koreanisch ist die Antwort.
+// mode 'mixed' (Standard) würfelt pro Frage zwischen Multiple-Choice und Texteingabe,
+// 'choice'/'typed' erzwingen ein festes Antwortformat.
+export function buildVocabQuestion(card, pool, options = {}) {
+  const {
+    direction = 'kr-en',
+    mode = 'mixed',
+    instruction = direction === 'kr-en' ? 'Wie heißt das auf Deutsch?' : 'Wie heißt das auf Koreanisch?',
+  } = options
+
+  const isKrToEn = direction === 'kr-en'
+  const prompt = isKrToEn ? card.korean : card.translation_de
+  const answer = isKrToEn ? card.translation_de : card.korean
+  const getValue = isKrToEn ? (c) => c.translation_de : (c) => c.korean
+
+  const wantsChoice = mode === 'choice' || (mode === 'mixed' && Math.random() < 0.5)
+  const choiceOptions = wantsChoice ? buildChoiceOptions(answer, pool, getValue) : null
+
   return {
     card,
-    mode: options ? 'choice' : 'typed',
-    instruction: 'Wie heißt das auf Deutsch?',
-    prompt: card.korean,
-    secondary: card.romanization,
+    mode: choiceOptions ? 'choice' : 'typed',
+    instruction,
+    prompt,
+    secondary: isKrToEn ? card.romanization : null,
     answer,
-    options,
+    options: choiceOptions,
   }
 }
 

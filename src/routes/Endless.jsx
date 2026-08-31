@@ -6,9 +6,22 @@ import { shuffle, buildVocabQuestion, isTypedAnswerCorrect } from '../quiz/vocab
 import SpeakButton from '../components/SpeakButton.jsx'
 import { SkeletonBlock } from '../components/Skeleton.jsx'
 
+const DIRECTIONS = [
+  { value: 'kr-en', label: 'Koreanisch → Englisch' },
+  { value: 'en-kr', label: 'Englisch → Koreanisch' },
+]
+
+const ANSWER_MODES = [
+  { value: 'mixed', label: 'Gemischt' },
+  { value: 'choice', label: 'Multiple-Choice' },
+  { value: 'typed', label: 'Texteingabe' },
+]
+
 export default function Endless() {
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState('')
+  const [direction, setDirection] = useState('kr-en')
+  const [answerMode, setAnswerMode] = useState('mixed')
   const [allVocab, setAllVocab] = useState([])
   const [queue, setQueue] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -19,8 +32,11 @@ export default function Endless() {
   // Einmal pro Frage berechnet (nicht bei jedem Tastenanschlag neu), sonst würde sich Modus/
   // Multiple-Choice-Optionen mitten in der Frage durch den enthaltenen Zufall verändern.
   const question = useMemo(
-    () => (queue.length > 0 ? buildVocabQuestion(queue[currentIndex], allVocab) : null),
-    [queue, currentIndex, allVocab],
+    () =>
+      queue.length > 0
+        ? buildVocabQuestion(queue[currentIndex], allVocab, { direction, mode: answerMode })
+        : null,
+    [queue, currentIndex, allVocab, direction, answerMode],
   )
 
   async function startPractice() {
@@ -102,6 +118,39 @@ export default function Endless() {
             dein Ergebnis wird dann gespeichert, der SM-2-Lernfortschritt deiner Karten bleibt
             unverändert.
           </p>
+
+          <div style={{ marginTop: 16 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>Richtung</p>
+            {DIRECTIONS.map(({ value, label }) => (
+              <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <input
+                  type="radio"
+                  name="direction"
+                  value={value}
+                  checked={direction === value}
+                  onChange={() => setDirection(value)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>Antwortformat</p>
+            {ANSWER_MODES.map(({ value, label }) => (
+              <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <input
+                  type="radio"
+                  name="answerMode"
+                  value={value}
+                  checked={answerMode === value}
+                  onChange={() => setAnswerMode(value)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
           {error && (
             <p className="error-text" role="alert">
               {error}
