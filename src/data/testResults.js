@@ -15,12 +15,10 @@ function testResultsCollection() {
   return collection(db, 'users', requireUid(), 'testResults')
 }
 
-export async function saveTestResult({ vocabCorrect, vocabTotal, grammarCorrect, grammarTotal }) {
+export async function saveTestResult({ correct, total }) {
   await addDoc(testResultsCollection(), {
-    vocabCorrect,
-    vocabTotal,
-    grammarCorrect,
-    grammarTotal,
+    correct,
+    total,
     createdAt: serverTimestamp(),
   })
 }

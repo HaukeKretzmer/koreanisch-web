@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../firebase.js'
 import { useAuth } from '../auth/AuthContext.jsx'
-import { getAllVocab } from '../data/vocab.js'
-import { getAllGrammar } from '../data/grammar.js'
+import { getAllVocab, deleteAllVocab } from '../data/vocab.js'
 import { getDueCards } from '../data/dueCards.js'
 import {
   ReviewIcon,
@@ -14,21 +13,40 @@ import {
   StatsIcon,
   TestIcon,
   SwapIcon,
-  ConjugateIcon,
 } from '../components/icons.jsx'
 
 export default function Dashboard() {
   const { user } = useAuth()
   const [counts, setCounts] = useState(null)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => {
-    Promise.all([getAllVocab(), getAllGrammar(), getDueCards()])
-      .then(([vocab, grammar, due]) => {
-        setCounts({ total: vocab.length + grammar.length, due: due.length })
+  function loadCounts() {
+    Promise.all([getAllVocab(), getDueCards()])
+      .then(([vocab, due]) => {
+        setCounts({ total: vocab.length, due: due.length })
       })
       .catch((err) => setError(err.message))
+  }
+
+  useEffect(() => {
+    loadCounts()
   }, [])
+
+  async function handleDeleteAllVocab() {
+    if (!window.confirm('Wirklich alle Vokabeln unwiderruflich löschen?')) return
+    setDeleting(true)
+    setError('')
+    try {
+      await deleteAllVocab()
+      setCounts(null)
+      loadCounts()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="page">
@@ -58,7 +76,7 @@ export default function Dashboard() {
           </div>
           <Link className="stat stat-link" to="/cards">
             <strong>{counts.total}</strong>
-            <span>Karten insgesamt</span>
+            <span>Vokabeln insgesamt</span>
           </Link>
         </div>
       )}
@@ -81,12 +99,6 @@ export default function Dashboard() {
             <TestIcon />
           </span>
           Tagestest
-        </Link>
-        <Link className="nav-item" to="/conjugate">
-          <span className="nav-icon">
-            <ConjugateIcon />
-          </span>
-          Konjugation üben
         </Link>
         <Link className="nav-item" to="/lessons">
           <span className="nav-icon">
@@ -112,6 +124,17 @@ export default function Dashboard() {
           </span>
           Statistik
         </Link>
+      </div>
+
+      <div style={{ marginTop: 32 }}>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={handleDeleteAllVocab}
+          disabled={deleting}
+        >
+          {deleting ? 'Lösche…' : 'Alle Vokabeln löschen'}
+        </button>
       </div>
     </div>
   )

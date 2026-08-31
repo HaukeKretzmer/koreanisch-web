@@ -1,39 +1,50 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllVocab, upsertVocabContent } from '../data/vocab.js'
-import { getAllGrammar, upsertGrammarContent } from '../data/grammar.js'
 import { upsertLesson } from '../data/lessons.js'
 
-function validate(data) {
-  if (!data || typeof data !== 'object') {
-    return 'Datei enthält kein gültiges JSON-Objekt.'
+function validateLessonEntry(entry, label) {
+  if (!entry || typeof entry !== 'object') {
+    return `${label}: kein gültiges Objekt.`
   }
-  if (!data.lesson || typeof data.lesson !== 'object') {
-    return 'Feld "lesson" fehlt oder ist ungültig.'
+  if (!entry.lesson || typeof entry.lesson !== 'object') {
+    return `${label}: Feld "lesson" fehlt oder ist ungültig.`
   }
-  if (!data.lesson.id || !data.lesson.title) {
-    return 'Lektion braucht mindestens "id" und "title".'
+  if (!entry.lesson.id || !entry.lesson.title) {
+    return `${label}: Lektion braucht mindestens "id" und "title".`
   }
-  const vocabulary = data.vocabulary ?? []
-  const grammar = data.grammar ?? []
-  if (!Array.isArray(vocabulary) || !Array.isArray(grammar)) {
-    return '"vocabulary" und "grammar" müssen Arrays sein.'
+  const vocabulary = entry.vocabulary ?? []
+  if (!Array.isArray(vocabulary)) {
+    return `${label}: "vocabulary" muss ein Array sein.`
   }
   for (const item of vocabulary) {
     if (!item.id || !item.korean || !item.translation_de) {
-      return 'Jede Vokabel braucht mindestens "id", "korean" und "translation_de".'
-    }
-  }
-  for (const item of grammar) {
-    if (!item.id || !item.explanation_de) {
-      return 'Jeder Grammatikpunkt braucht mindestens "id" und "explanation_de".'
+      return `${label}: Jede Vokabel braucht mindestens "id", "korean" und "translation_de".`
     }
   }
   return ''
 }
 
+// Unterstützt zwei Formate: eine einzelne Lektion ({ lesson, vocabulary }) oder mehrere
+// Lektionen in einer Datei ({ lessons: [{ lesson, vocabulary }, ...] }).
+function normalize(data) {
+  if (!data || typeof data !== 'object') {
+    return { error: 'Datei enthält kein gültiges JSON-Objekt.', lessons: [] }
+  }
+  if (Array.isArray(data.lessons)) {
+    for (const [index, entry] of data.lessons.entries()) {
+      const error = validateLessonEntry(entry, `Lektion ${index + 1}`)
+      if (error) return { error, lessons: [] }
+    }
+    return { error: '', lessons: data.lessons }
+  }
+  const error = validateLessonEntry(data, 'Lektion')
+  if (error) return { error, lessons: [] }
+  return { error: '', lessons: [data] }
+}
+
 export default function Import() {
-  const [data, setData] = useState(null)
+  const [lessons, setLessons] = useState(null)
   const [preview, setPreview] = useState(null)
   const [error, setError] = useState('')
   const [importing, setImporting] = useState(false)
@@ -45,7 +56,7 @@ export default function Import() {
     if (!file) return
 
     setError('')
-    setData(null)
+    setLessons(null)
     setPreview(null)
     setDone(false)
 
@@ -57,25 +68,22 @@ export default function Import() {
       return
     }
 
-    const validationError = validate(parsed)
+    const { error: validationError, lessons: parsedLessons } = normalize(parsed)
     if (validationError) {
       setError(validationError)
       return
     }
 
     try {
-      const [existingVocab, existingGrammar] = await Promise.all([getAllVocab(), getAllGrammar()])
+      const existingVocab = await getAllVocab()
       const existingVocabIds = new Set(existingVocab.map((card) => card.id))
-      const existingGrammarIds = new Set(existingGrammar.map((card) => card.id))
-      const vocabulary = parsed.vocabulary ?? []
-      const grammar = parsed.grammar ?? []
+      const allVocab = parsedLessons.flatMap((entry) => entry.vocabulary ?? [])
 
-      setData(parsed)
+      setLessons(parsedLessons)
       setPreview({
-        newVocab: vocabulary.filter((item) => !existingVocabIds.has(item.id)).length,
-        updatedVocab: vocabulary.filter((item) => existingVocabIds.has(item.id)).length,
-        newGrammar: grammar.filter((item) => !existingGrammarIds.has(item.id)).length,
-        updatedGrammar: grammar.filter((item) => existingGrammarIds.has(item.id)).length,
+        lessonCount: parsedLessons.length,
+        newVocab: allVocab.filter((item) => !existingVocabIds.has(item.id)).length,
+        updatedVocab: allVocab.filter((item) => existingVocabIds.has(item.id)).length,
       })
     } catch (err) {
       setError(err.message)
@@ -86,21 +94,19 @@ export default function Import() {
     setImporting(true)
     setError('')
     try {
-      const { lesson, vocabulary = [], grammar = [] } = data
-      const { id: lessonId, ...lessonContent } = lesson
-      await upsertLesson(lessonId, lessonContent)
+      for (const entry of lessons) {
+        const { lesson, vocabulary = [] } = entry
+        const { id: lessonId, ...lessonContent } = lesson
+        await upsertLesson(lessonId, lessonContent)
 
-      for (const item of vocabulary) {
-        const { id, ...content } = item
-        await upsertVocabContent(id, { ...content, lessonId })
-      }
-      for (const item of grammar) {
-        const { id, ...content } = item
-        await upsertGrammarContent(id, { ...content, lessonId })
+        for (const item of vocabulary) {
+          const { id, ...content } = item
+          await upsertVocabContent(id, { ...content, lessonId })
+        }
       }
 
       setDone(true)
-      setData(null)
+      setLessons(null)
       setPreview(null)
     } catch (err) {
       setError(err.message)
@@ -120,11 +126,12 @@ export default function Import() {
 
       {error && <p className="error-text" role="alert">{error}</p>}
 
-      {preview && data && (
+      {preview && lessons && (
         <div>
-          <h2>Vorschau: {data.lesson.title}</h2>
+          <h2>
+            Vorschau: {preview.lessonCount === 1 ? lessons[0].lesson.title : `${preview.lessonCount} Lektionen`}
+          </h2>
           <p>Vokabeln: {preview.newVocab} neu, {preview.updatedVocab} aktualisiert</p>
-          <p>Grammatik: {preview.newGrammar} neu, {preview.updatedGrammar} aktualisiert</p>
           <button type="button" className="btn btn-primary btn-block" onClick={handleImport} disabled={importing}>
             {importing ? 'Importiere…' : 'Importieren'}
           </button>
