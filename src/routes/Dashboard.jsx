@@ -13,6 +13,7 @@ import {
   StatsIcon,
   TestIcon,
   SwapIcon,
+  InfinityIcon,
 } from '../components/icons.jsx'
 
 export default function Dashboard() {
@@ -99,6 +100,12 @@ export default function Dashboard() {
             <TestIcon />
           </span>
           Tagestest
+        </Link>
+        <Link className="nav-item" to="/endless">
+          <span className="nav-icon">
+            <InfinityIcon />
+          </span>
+          Dauerlernen
         </Link>
         <Link className="nav-item" to="/lessons">
           <span className="nav-icon">
