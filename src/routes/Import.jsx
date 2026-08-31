@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getAllVocab, upsertVocabContent } from '../data/vocab.js'
-import { upsertLesson } from '../data/lessons.js'
+import { getAllVocab, VOCAB_COLLECTION } from '../data/vocab.js'
+import { bulkUpsertContentPreservingSrs } from '../data/cards.js'
+import { getAllLessons, bulkUpsertLessons } from '../data/lessons.js'
 
 function validateLessonEntry(entry, label) {
   if (!entry || typeof entry !== 'object') {
@@ -44,8 +45,9 @@ function normalize(data) {
 }
 
 export default function Import() {
-  const [lessons, setLessons] = useState(null)
+  const [parsedData, setParsedData] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [skipExistingVocab, setSkipExistingVocab] = useState(false)
   const [error, setError] = useState('')
   const [importing, setImporting] = useState(false)
   const [done, setDone] = useState(false)
@@ -56,8 +58,9 @@ export default function Import() {
     if (!file) return
 
     setError('')
-    setLessons(null)
+    setParsedData(null)
     setPreview(null)
+    setSkipExistingVocab(false)
     setDone(false)
 
     let parsed
@@ -75,12 +78,14 @@ export default function Import() {
     }
 
     try {
-      const existingVocab = await getAllVocab()
+      const [existingVocab, existingLessons] = await Promise.all([getAllVocab(), getAllLessons()])
       const existingVocabIds = new Set(existingVocab.map((card) => card.id))
+      const existingLessonIds = new Set(existingLessons.map((lesson) => lesson.id))
       const allVocab = parsedLessons.flatMap((entry) => entry.vocabulary ?? [])
 
-      setLessons(parsedLessons)
+      setParsedData({ entries: parsedLessons, existingVocabIds, existingLessonIds })
       setPreview({
+        title: parsedLessons.length === 1 ? parsedLessons[0].lesson.title : null,
         lessonCount: parsedLessons.length,
         newVocab: allVocab.filter((item) => !existingVocabIds.has(item.id)).length,
         updatedVocab: allVocab.filter((item) => existingVocabIds.has(item.id)).length,
@@ -94,19 +99,20 @@ export default function Import() {
     setImporting(true)
     setError('')
     try {
-      for (const entry of lessons) {
-        const { lesson, vocabulary = [] } = entry
-        const { id: lessonId, ...lessonContent } = lesson
-        await upsertLesson(lessonId, lessonContent)
-
-        for (const item of vocabulary) {
-          const { id, ...content } = item
-          await upsertVocabContent(id, { ...content, lessonId })
-        }
+      const { entries, existingVocabIds, existingLessonIds } = parsedData
+      const lessonPayloads = entries.map((entry) => ({ id: entry.lesson.id, ...entry.lesson }))
+      let vocabPayloads = entries.flatMap((entry) =>
+        (entry.vocabulary ?? []).map((item) => ({ ...item, lessonId: entry.lesson.id })),
+      )
+      if (skipExistingVocab) {
+        vocabPayloads = vocabPayloads.filter((item) => !existingVocabIds.has(item.id))
       }
 
+      await bulkUpsertLessons(lessonPayloads, existingLessonIds)
+      await bulkUpsertContentPreservingSrs(VOCAB_COLLECTION, vocabPayloads, existingVocabIds)
+
       setDone(true)
-      setLessons(null)
+      setParsedData(null)
       setPreview(null)
     } catch (err) {
       setError(err.message)
@@ -126,12 +132,26 @@ export default function Import() {
 
       {error && <p className="error-text" role="alert">{error}</p>}
 
-      {preview && lessons && (
+      {preview && parsedData && (
         <div>
-          <h2>
-            Vorschau: {preview.lessonCount === 1 ? lessons[0].lesson.title : `${preview.lessonCount} Lektionen`}
-          </h2>
-          <p>Vokabeln: {preview.newVocab} neu, {preview.updatedVocab} aktualisiert</p>
+          <h2>Vorschau: {preview.title ?? `${preview.lessonCount} Lektionen`}</h2>
+          <p>
+            Vokabeln: {preview.newVocab} neu
+            {preview.updatedVocab > 0 &&
+              (skipExistingVocab
+                ? `, ${preview.updatedVocab} übersprungen (bereits vorhanden)`
+                : `, ${preview.updatedVocab} aktualisiert`)}
+          </p>
+          {preview.updatedVocab > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0' }}>
+              <input
+                type="checkbox"
+                checked={skipExistingVocab}
+                onChange={(event) => setSkipExistingVocab(event.target.checked)}
+              />
+              Bestehende Vokabeln nicht aktualisieren, nur neue hinzufügen
+            </label>
+          )}
           <button type="button" className="btn btn-primary btn-block" onClick={handleImport} disabled={importing}>
             {importing ? 'Importiere…' : 'Importieren'}
           </button>

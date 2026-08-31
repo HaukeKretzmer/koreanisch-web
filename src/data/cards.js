@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { requireUid } from './uid.js'
@@ -87,4 +88,40 @@ export async function upsertContentPreservingSrs(collectionName, id, contentFiel
   }
 
   await setDoc(ref, payload, { merge: true })
+}
+
+// Firestore erlaubt max. 500 Schreiboperationen pro Batch.
+const BATCH_CHUNK_SIZE = 400
+
+function chunk(array, size) {
+  const chunks = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
+// Bulk-Variante von upsertContentPreservingSrs für den Import: schreibt viele Karten über
+// Firestore-Batches statt einzeln mit je einem vorherigen getDoc, um Massenimporte nicht durch
+// hunderte sequenzielle Round-Trips auszubremsen. existingIds muss vorher (z.B. für die
+// Import-Vorschau) einmalig geladen worden sein.
+export async function bulkUpsertContentPreservingSrs(collectionName, items, existingIds) {
+  const chunks = chunk(items, BATCH_CHUNK_SIZE)
+  for (const items of chunks) {
+    const batch = writeBatch(db)
+    const now = serverTimestamp()
+    for (const { id, ...contentFields } of items) {
+      const payload = { ...contentFields, updatedAt: now }
+      if (!existingIds.has(id)) {
+        Object.assign(payload, {
+          ...SRS_DEFAULTS,
+          dueDate: new Date(),
+          lastReviewedAt: null,
+          createdAt: now,
+        })
+      }
+      batch.set(cardDoc(collectionName, id), payload, { merge: true })
+    }
+    await batch.commit()
+  }
 }
